@@ -5,4 +5,15 @@ A link to the course can be found [here](http://web.stanford.edu/class/cs276/), 
 
 ## setup
 
+Download the collection and extract it in the `data` directory, under a `collection directory` :
+```
+.
+├── data
+│   └── collection
+|       ├── 0
+|       ├── ...
+|       └── 9
+├── preprocess.py
+...
+```
 install the necessary modules : `pip install -r requirements.txt`

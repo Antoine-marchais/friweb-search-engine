@@ -1,2 +1,3 @@
 data/*
+!data/stop_words.txt
 .vscode/*

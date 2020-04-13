@@ -47,6 +47,25 @@ def load_corpus_from_binary(path: str) -> Dict[str, List[str]]:
     with open(path,"rb") as f:
         corpus = pkl.load(f)
     return corpus
+    
+def load_stop_words(stop_word_path: str) -> List[str]:
+    with open(stop_word_path,"r") as f:
+        stp = [word.lower() for word in f.read().split("\n") if word != ""]
+    return stp
+
+def remove_stop_words_from_list(l: List[str], stop_words: List[str], exceptions: List[str] = []) -> List[str]:
+    """remove stop words from a list, except for tokens specified in exceptions
+
+    Arguments:
+        l {List[str]} -- [description]
+        stop_word_path {str} -- [description]
+        exceptions {List[str]} -- [description]
+
+    Returns:
+        List[str] -- [description]
+    """
+    
+    return [word for word in l if (word in exceptions) or (word not in stop_words)]
 
 def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> Dict[str, List[str]]:
     """remove all stop words from corpus given a stop words file
@@ -58,12 +77,16 @@ def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> 
     Returns:
         {Dict[str, List[str]]} -- updated corpus
     """
-    with open(stop_word_path,"r") as f:
-        stp = [word.lower() for word in f.read().split("\n") if word != ""]
+    stp = load_stop_words(stop_word_path)
     new_corpus = {}
     for key in collection.keys():
-        new_corpus[key] = [word for word in collection[key] if word not in stp]
+        new_corpus[key] = remove_stop_words_from_list(collection[key], stp, [])
     return new_corpus
+
+def tokens_lemmatize(tokens: List[str]) -> List[str]:
+    stemmer = WordNetLemmatizer() # initialisation d'un lemmatiseur
+    tags = pos_tag(tokens)
+    return [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
 
 def collection_lemmatize(segmented_collection: Dict[str, List[str]]) -> Dict[str, List[str]]:
     """Lemmatize all articles in corpus using pos tags

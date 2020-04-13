@@ -3,7 +3,7 @@ import pickle as pkl
 
 from typing import Optional, Dict, List, Union, Tuple
 
-from src.config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS
+from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
@@ -22,8 +22,8 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
         Dict[str, List[str]] -- The loaded corpus
     """
     corpus = {}
-    for n_dir in os.listdir(PATH_DATA):
-        dir_path = os.path.join(PATH_DATA, n_dir)
+    for n_dir in os.listdir(path):
+        dir_path = os.path.join(path, n_dir)
         index_file = 0
         list_files = os.listdir(dir_path)
         while index_file < len(list_files) and not (dev and index_file >= dev_iter):
@@ -33,6 +33,19 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
             with open(file_path, "r") as f:
                 tokens = f.read().split()
             corpus[os.path.join(n_dir,filename)] = [token.lower() for token in tokens]
+    return corpus
+
+def load_corpus_from_binary(path: str) -> Dict[str, List[str]]:
+    """Load corpus from binary file
+    
+    Arguments:
+        path {string} -- path of the binary file to load corpus from
+    
+    Returns:
+        [type] -- [description]
+    """
+    with open(path,"rb") as f:
+        corpus = pkl.load(f)
     return corpus
 
 def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> Dict[str, List[str]]:
@@ -117,7 +130,15 @@ def get_wordnet_pos(treebank_tag: str) -> str:
 
 if __name__ == "__main__" :
     print("reading files")
-    corpus = create_corpus_from_files(PATH_DATA, dev=DEV_MODE, dev_iter=DEV_ITER)
+    if os.path.exists(PATH_DATA_BIN) and not DEV_MODE:
+        corpus = load_corpus_from_binary(PATH_DATA_BIN)
+    else:
+        corpus = create_corpus_from_files(PATH_DATA, dev=DEV_MODE, dev_iter=DEV_ITER)
+        if not DEV_MODE :
+            print("saving corpus as binary")
+            with open(PATH_DATA_BIN,"wb") as f:
+                pkl.dump(corpus, f)
+    
     print("creating inverted index")
     index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=1)
     print("saving index")

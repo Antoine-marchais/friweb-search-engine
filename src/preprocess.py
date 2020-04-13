@@ -5,8 +5,11 @@ from typing import Optional, Dict, List, Union, Tuple
 
 from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN
 from nltk import pos_tag
+from nltk.stem.api import StemmerI
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
+from nltk.tokenize import word_tokenize
+
 
 def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int]=None) -> Dict[str, List[str]]:
     """Read file and import tokens into a new collection
@@ -48,16 +51,28 @@ def load_corpus_from_binary(path: str) -> Dict[str, List[str]]:
         corpus = pkl.load(f)
     return corpus
     
+def tokenize_document(document: str) -> List[str]:
+    """tokenize a document with nltk
+    
+    Arguments:
+        document {str} -- a str representing the document, query, etc..
+    
+    Returns:
+        List[str] -- lowered tokens
+    """
+    tokens = word_tokenize(document)
+    return [tok.lower() for tok in tokens]
+
 def load_stop_words(stop_word_path: str) -> List[str]:
     with open(stop_word_path,"r") as f:
         stp = [word.lower() for word in f.read().split("\n") if word != ""]
     return stp
 
-def remove_stop_words_from_list(l: List[str], stop_words: List[str], exceptions: List[str] = []) -> List[str]:
+def remove_stop_words_from_document(d: List[str], stop_words: List[str], exceptions: List[str] = []) -> List[str]:
     """remove stop words from a list, except for tokens specified in exceptions
 
     Arguments:
-        l {List[str]} -- [description]
+        d {List[str]} -- [description]
         stop_word_path {str} -- [description]
         exceptions {List[str]} -- [description]
 
@@ -65,7 +80,7 @@ def remove_stop_words_from_list(l: List[str], stop_words: List[str], exceptions:
         List[str] -- [description]
     """
     
-    return [word for word in l if (word in exceptions) or (word not in stop_words)]
+    return [word for word in d if (word in exceptions) or (word not in stop_words)]
 
 def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> Dict[str, List[str]]:
     """remove all stop words from corpus given a stop words file
@@ -80,8 +95,16 @@ def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> 
     stp = load_stop_words(stop_word_path)
     new_corpus = {}
     for key in collection.keys():
-        new_corpus[key] = remove_stop_words_from_list(collection[key], stp, [])
+        new_corpus[key] = remove_stop_words_from_document(collection[key], stp, [])
     return new_corpus
+
+def get_lemmatizer() -> StemmerI:
+    return WordNetLemmatizer()
+
+def lemmatize_tok(token: str, lemmatizer: StemmerI) -> str:
+    tags = pos_tag([token])
+    tag = tags[0]
+    return lemmatizer.lemmatize(tag[0], get_wordnet_pos(tag[1]))
 
 def tokens_lemmatize(tokens: List[str]) -> List[str]:
     stemmer = WordNetLemmatizer() # initialisation d'un lemmatiseur
@@ -122,6 +145,7 @@ def build_inverted_index(
     """
     collection = remove_stop_words(collection, stop_words_path)
     collection = collection_lemmatize(collection)
+    collection = remove_stop_words(collection, stop_words_path)
     index = {}
     for key in collection.keys():
         terms = set(collection[key])

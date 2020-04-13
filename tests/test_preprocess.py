@@ -12,3 +12,4 @@ def test_build_dev_inverted_index_type_1():
         test_index = pickle.load(f)
 
     assert test_index == index
+

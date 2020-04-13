@@ -1,5 +1,5 @@
-from src.config import PATH_DATA, PATH_STOP_WORDS
-from src.preprocess import create_corpus_from_files, build_inverted_index
+from config import PATH_DATA, PATH_STOP_WORDS
+from preprocess import create_corpus_from_files, build_inverted_index
 
 import pickle
 

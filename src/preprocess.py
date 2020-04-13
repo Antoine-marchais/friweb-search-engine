@@ -3,7 +3,7 @@ import pickle as pkl
 
 from typing import Optional, Dict, List, Union, Tuple
 
-from src.config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN
+from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet

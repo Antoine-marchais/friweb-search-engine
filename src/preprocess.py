@@ -22,8 +22,8 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
         Dict[str, List[str]] -- The loaded corpus
     """
     corpus = {}
-    for n_dir in os.listdir(PATH_DATA):
-        dir_path = os.path.join(PATH_DATA, n_dir)
+    for n_dir in os.listdir(path):
+        dir_path = os.path.join(path, n_dir)
         index_file = 0
         list_files = os.listdir(dir_path)
         while index_file < len(list_files) and not (dev and index_file >= dev_iter):

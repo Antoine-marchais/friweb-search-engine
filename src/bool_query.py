@@ -1,25 +1,33 @@
 import tt
 
 from typing import List, Any
+from enum import Enum
 
-from src.config import PATH_STOP_WORDS
-from src.preprocess import tokenize_document, remove_stop_words_from_document, load_stop_words, lemmatize_tok, get_lemmatizer
+from config import PATH_STOP_WORDS
+from preprocess import tokenize_document, remove_stop_words_from_document, load_stop_words, lemmatize_one_token, get_lemmatizer
 
-LOGICAL_TOKENS = ["and", "or", "not"]
+class LOGICAL_TOKENS(Enum):
+    AND = "and"
+    OR = "or"
+    NAND = "nand"
+    # NOT = "not"
+
+LOGICAL_TOKENS_VALUES = [x.value for x in LOGICAL_TOKENS]
+
 
 def lemmatize_query(query: str) -> tt.ExpressionTreeNode:
     tokens = tokenize_document(query)
     stop_words = load_stop_words(PATH_STOP_WORDS)
-    tokens = remove_stop_words_from_document(tokens, stop_words, LOGICAL_TOKENS)
+    tokens = remove_stop_words_from_document(tokens, stop_words, LOGICAL_TOKENS_VALUES)
 
 
     lemmatized_query = []
     lemmatizer = get_lemmatizer()
     for tok in tokens:
-        if tok in LOGICAL_TOKENS:
+        if tok in LOGICAL_TOKENS_VALUES:
             lemmatized_query.append(tok)
         else:
-            lemmatized_query.append(lemmatize_tok(tok, lemmatizer))
+            lemmatized_query.append(lemmatize_one_token(tok, lemmatizer))
     
     return lemmatized_query
 
@@ -120,3 +128,19 @@ def merge_nand(a: List[int], b: List[int]) -> List[int]:
         i += 1
 
     return res
+
+def boolean_operator_merge(boolOperator: str, posting_term1: List[int], posting_term2: List[int]) ->  List[int]:
+
+    try:
+        logicalOperator = LOGICAL_TOKENS(boolOperator)
+        if logicalOperator == LOGICAL_TOKENS.AND:
+            return merge_and(posting_term1, posting_term2)
+        elif logicalOperator == LOGICAL_TOKENS.OR:
+            return merge_or(posting_term1, posting_term2)
+        elif logicalOperator == LOGICAL_TOKENS.NAND:
+            return merge_nand(posting_term1, posting_term2)
+    except ValueError:
+        raise Exception(f"unsupported BoolOperator: {boolOperator}")
+    
+
+# def process_post_fix_query(query: List[str], invertedIndex: Dict[int, str])

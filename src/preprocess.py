@@ -1,6 +1,8 @@
 import os
 import pickle as pkl
 
+from collections import OrderedDict
+from dataclasses import dataclass
 from typing import Optional, Dict, List, Union, Tuple
 
 from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN
@@ -24,7 +26,7 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
     Returns:
         Dict[str, List[str]] -- The loaded corpus
     """
-    corpus = {}
+    corpus = OrderedDict()
     for n_dir in os.listdir(path):
         dir_path = os.path.join(path, n_dir)
         index_file = 0
@@ -34,8 +36,7 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
             index_file += 1
             file_path = os.path.join(dir_path, filename)
             with open(file_path, "r") as f:
-                tokens = f.read().split()
-            corpus[os.path.join(n_dir,filename)] = [token.lower() for token in tokens]
+                corpus[os.path.join(n_dir,filename)] = f.read()
     return corpus
 
 def load_corpus_from_binary(path: str) -> Dict[str, List[str]]:
@@ -63,6 +64,13 @@ def tokenize_document(document: str) -> List[str]:
     tokens = word_tokenize(document)
     return [tok.lower() for tok in tokens]
 
+def tokenize_collection(collection: Dict[str, str]) -> Dict[str, List[str]]:
+    new_collection = OrderedDict()
+    for key in collection:
+        new_collection[key] = tokenize_document(collection[key])
+
+    return new_collection
+
 def load_stop_words(stop_word_path: str) -> List[str]:
     with open(stop_word_path,"r") as f:
         stp = [word.lower() for word in f.read().split("\n") if word != ""]
@@ -82,7 +90,7 @@ def remove_stop_words_from_document(d: List[str], stop_words: List[str], excepti
     
     return [word for word in d if (word in exceptions) or (word not in stop_words)]
 
-def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> Dict[str, List[str]]:
+def remove_stop_words_collection(collection: Dict[str, List[str]], stop_word_path: str) -> Dict[str, List[str]]:
     """remove all stop words from corpus given a stop words file
     
     Arguments:
@@ -101,17 +109,12 @@ def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> 
 def get_lemmatizer() -> StemmerI:
     return WordNetLemmatizer()
 
-def lemmatize_tok(token: str, lemmatizer: StemmerI) -> str:
+def lemmatize_one_token(token: str, lemmatizer: StemmerI) -> str:
     tags = pos_tag([token])
     tag = tags[0]
     return lemmatizer.lemmatize(tag[0], get_wordnet_pos(tag[1]))
 
-def tokens_lemmatize(tokens: List[str]) -> List[str]:
-    stemmer = WordNetLemmatizer() # initialisation d'un lemmatiseur
-    tags = pos_tag(tokens)
-    return [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
-
-def collection_lemmatize(segmented_collection: Dict[str, List[str]]) -> Dict[str, List[str]]:
+def lemmatize_collection(segmented_collection: Dict[str, List[str]]) -> Dict[str, List[str]]:
     """Lemmatize all articles in corpus using pos tags
     
     Arguments:
@@ -127,11 +130,35 @@ def collection_lemmatize(segmented_collection: Dict[str, List[str]]) -> Dict[str
         lemmatized_collection[key] = [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
     return lemmatized_collection
 
+def construct_documents_mapping(collection: Dict[str, List[str]]) -> List[str]:
+    return collection.keys()
+
+@dataclass
+class InvertedIndex:
+    """
+    Representation of an inverted index
+
+    'self.index' is the actual inverted index, from terms to document id
+    'self.mapping' is the mapping from document id to the actual document path/name
+    'self.itype' describe the type of the index :
+        - 1 : simple doc index, we save only the id of the documents in which the term appears
+        - 2 : frequency index, we save both the id of the documents and the tf in the document
+        - 3 : position index, we save, for each term, the id of the document, and all the position of the terms
+    """
+    itype: int
+    index: Union[
+        Dict[str, List[int]], # itype == 1
+        Dict[str, Dict[int, int]], # itype == 2
+        Dict[str, Dict[int, List[int]]] # itype == 3
+        ]
+    mapping: Dict[int, str]
+
+
 def build_inverted_index(
-    collection: Dict[str, List[str]],
+    collection: Dict[str, str],
     stop_words_path: str,
     type_index: int = 1,
-    ) -> Union[Dict[str, str], Dict[str, Tuple[str, int]], Dict[str, Tuple[int]]]:
+    ) -> InvertedIndex:
     """Build an inverted index from a processed corpus
     
     Arguments:
@@ -143,22 +170,63 @@ def build_inverted_index(
     Returns:
         dict -- inverted index of given type
     """
-    collection = remove_stop_words(collection, stop_words_path)
-    collection = collection_lemmatize(collection)
-    collection = remove_stop_words(collection, stop_words_path)
-    index = {}
-    for key in collection.keys():
-        terms = set(collection[key])
-        for t in terms:
-            if not t in index:
-                index[t] = []
-            if type_index == 1:
-                index[t].append(key)
-            elif type_index == 2:
-                index[t].append((key,collection[key].count(t)))
-            elif type_index == 3:
-                index[t].append((key,tuple([index for index in range(len(collection[key])) if collection[key][index] == t])))
-    return index
+    collection = tokenize_collection(collection)
+    collection = remove_stop_words_collection(collection, stop_words_path)
+    collection = lemmatize_collection(collection)
+    collection = remove_stop_words_collection(collection, stop_words_path)
+    mapping = OrderedDict()
+    index = OrderedDict()
+
+    doc_id = 0
+    if type_index == 1:
+        for document in collection:
+
+            for term in collection[document]:
+                if term in index.keys():
+                    if doc_id not in index[term]:
+                        index[term].append(doc_id)
+                else:
+                    index[term]=[doc_id]
+
+            mapping[doc_id] = document
+            doc_id += 1
+
+    elif type_index ==2:
+        for document in collection:
+            for term in collection[document]:
+                if term in index.keys():
+                    if doc_id in index[term].keys():
+                        index[term][doc_id] = index[term][doc_id] + 1
+                    else:
+                        index[term][doc_id]= 1
+                else:
+                    index[term]=OrderedDict()
+                    index[term][doc_id]=1
+
+            mapping[doc_id] = document
+            doc_id += 1
+
+    elif type_index==3:
+        for document in collection:
+            pos=0
+            for term in collection[document]:
+                if term in index.keys():
+                    if doc_id in index[term].keys():
+                        index[term][doc_id].append(pos)
+                    else:
+                        index[term][doc_id]= [pos]
+                else:
+                    index[term]=OrderedDict()
+                    index[term][doc_id]=[pos]
+                pos += 1
+            
+            mapping[doc_id] = document
+            doc_id += 1
+    
+    else:
+        raise Exception(f"index type '{type_index}' is not supported")
+    
+    return InvertedIndex(type_index, index, mapping)
 
 def get_wordnet_pos(treebank_tag: str) -> str:
     """Convert treebank tags into wordnet POS tag"""
@@ -189,5 +257,6 @@ if __name__ == "__main__" :
     print("creating inverted index")
     index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=1)
     print("saving index")
+    InvertedIndex.__module__ = "preprocess"
     with open(PATH_INDEX,"wb") as f:
         pkl.dump(index,f)

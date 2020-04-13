@@ -257,6 +257,5 @@ if __name__ == "__main__" :
     print("creating inverted index")
     index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=1)
     print("saving index")
-    InvertedIndex.__module__ = "preprocess"
     with open(PATH_INDEX,"wb") as f:
         pkl.dump(index,f)

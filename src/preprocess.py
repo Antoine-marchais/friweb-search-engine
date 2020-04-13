@@ -35,7 +35,7 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
             corpus[os.path.join(n_dir,filename)] = [token.lower() for token in tokens]
     return corpus
 
-def load_corpus_from_binary(path):
+def load_corpus_from_binary(path: str) -> Dict[str, List[str]]:
     """Load corpus from binary file
     
     Arguments:
@@ -135,6 +135,7 @@ if __name__ == "__main__" :
     else:
         corpus = create_corpus_from_files(PATH_DATA, dev=DEV_MODE, dev_iter=DEV_ITER)
         if not DEV_MODE :
+            print("saving corpus as binary")
             with open(PATH_DATA_BIN,"wb") as f:
                 pkl.dump(corpus, f)
     

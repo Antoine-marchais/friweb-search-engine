@@ -1,12 +1,14 @@
 import os
-import pickle as pkl 
+import pickle as pkl
+
+from typing import Optional, Dict, List, Union, Tuple
 
 from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 
-def create_corpus_from_files(path, dev=False, dev_iter=None):
+def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int]=None) -> Dict[str, List[str]]:
     """Read file and import tokens into a new collection
     
     Arguments:
@@ -14,10 +16,10 @@ def create_corpus_from_files(path, dev=False, dev_iter=None):
     
     Keyword Arguments:
         dev {bool} -- activate dev mode (default: {False})
-        dev_iter {int} -- number of iterations in dev mode (default: {None})
+        dev_iter {Optional[int]} -- number of iterations in dev mode (default: {None})
     
     Returns:
-        [type] -- [description]
+        Dict[str, List[str]] -- The loaded corpus
     """
     corpus = {}
     for n_dir in os.listdir(PATH_DATA):
@@ -33,15 +35,15 @@ def create_corpus_from_files(path, dev=False, dev_iter=None):
             corpus[os.path.join(n_dir,filename)] = [token.lower() for token in tokens]
     return corpus
 
-def remove_stop_words(collection ,stop_word_path):
+def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> Dict[str, List[str]]:
     """remove all stop words from corpus given a stop words file
     
     Arguments:
-        collection {dict} -- corpus of split articles
+        collection {Dict[str, List[str]]} -- corpus of split articles
         stop_word_path {string} -- path of the stop words file
     
     Returns:
-        {dict} -- updated corpus
+        {Dict[str, List[str]]} -- updated corpus
     """
     with open(stop_word_path,"r") as f:
         stp = [word.lower() for word in f.read().split("\n") if word != ""]
@@ -50,23 +52,27 @@ def remove_stop_words(collection ,stop_word_path):
         new_corpus[key] = [word for word in corpus[key] if word not in stp]
     return new_corpus
 
-def collection_lemmatize(segmented_collection):
+def collection_lemmatize(segmented_collection: Dict[str, List[str]]) -> Dict[str, List[str]]:
     """Lemmatize all articles in corpus using pos tags
     
     Arguments:
-        segmented_collection {dict} -- corpus without stop words
+        segmented_collection {Dict[str, List[str]]} -- corpus without stop words
     
     Returns:
-        {dict} -- lemmatized corpus
+        {Dict[str, List[str]]} -- lemmatized corpus
     """
     lemmatized_collection = {}
-    stemmer = WordNetLemmatizer () # initialisation d'un lemmatiseur
+    stemmer = WordNetLemmatizer() # initialisation d'un lemmatiseur
     for key in segmented_collection.keys():
         tags = pos_tag(segmented_collection[key])
         lemmatized_collection[key] = [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
     return lemmatized_collection
 
-def build_inverted_index(collection, stop_words_path, type_index=1):
+def build_inverted_index(
+    collection: Dict[str, List[str]],
+    stop_words_path: str,
+    type_index: int = 1,
+    ) -> Union[Dict[str, str], Dict[str, Tuple[str, int]], Dict[str, Tuple[int]]]:
     """Build an inverted index from a processed corpus
     
     Arguments:
@@ -94,7 +100,7 @@ def build_inverted_index(collection, stop_words_path, type_index=1):
                 index[t].append((key,tuple([index for index in range(len(collection[key])) if collection[key][index] == t])))
     return index
 
-def get_wordnet_pos(treebank_tag):
+def get_wordnet_pos(treebank_tag: str) -> str:
     """Convert treebank tags into wordnet POS tag"""
 
     if treebank_tag.startswith('J'):

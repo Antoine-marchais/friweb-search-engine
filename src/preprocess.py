@@ -3,7 +3,7 @@ import pickle as pkl
 
 from typing import Optional, Dict, List, Union, Tuple
 
-from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS
+from src.config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
@@ -48,8 +48,8 @@ def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> 
     with open(stop_word_path,"r") as f:
         stp = [word.lower() for word in f.read().split("\n") if word != ""]
     new_corpus = {}
-    for key in corpus.keys():
-        new_corpus[key] = [word for word in corpus[key] if word not in stp]
+    for key in collection.keys():
+        new_corpus[key] = [word for word in collection[key] if word not in stp]
     return new_corpus
 
 def collection_lemmatize(segmented_collection: Dict[str, List[str]]) -> Dict[str, List[str]]:

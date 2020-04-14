@@ -4,7 +4,7 @@ from interface import retrieve_docs_from_bool_query
 TEST_INVERTED_INDEX_1 = InvertedIndex(
     itype=1,
     index={
-        "cat": [1, 2, 3],TES
+        "cat": [1, 2, 3],
         "dog": [1, 3, 5],
         "duck": [1, 5],
         "squid": [1, 2, 3, 6],

@@ -4,7 +4,9 @@ from config import PATH_DATA, PATH_STOP_WORDS
 from preprocess import create_corpus_from_files, build_inverted_index, InvertedIndex
 
 import pickle
+import pytest
 
+@pytest.mark.xfail(reason="data is not imported in the repo +  pickle doesn't load properly the data")
 def test_build_dev_inverted_index():
     
     corpus = create_corpus_from_files(PATH_DATA, dev=True, dev_iter=100)

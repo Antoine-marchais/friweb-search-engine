@@ -1,6 +1,6 @@
 import tt
 
-from typing import List, Any
+from typing import List, Any, Dict
 from enum import Enum
 
 from config import PATH_STOP_WORDS
@@ -143,4 +143,18 @@ def boolean_operator_merge(boolOperator: str, posting_term1: List[int], posting_
         raise Exception(f"unsupported BoolOperator: {boolOperator}")
     
 
-# def process_post_fix_query(query: List[str], invertedIndex: Dict[int, str])
+def process_postfix_query(postfix_query: List[str], inverted_index: Dict[str, int]) -> List[int]:
+    relevant_docs_stack: List[List[int]] = []
+    for term in postfix_query:
+        if term in LOGICAL_TOKENS_VALUES:
+            op_2 = relevant_docs_stack.pop()
+            op_1 = relevant_docs_stack.pop()
+            relevant_docs_stack.append(boolean_operator_merge(term, op_1, op_2))
+        else:
+            if term in inverted_index:
+                relevant_docs_stack.append(inverted_index[term])
+            else: 
+                relevant_docs_stack.append([])
+
+    assert len(relevant_docs_stack) == 1, Exception(f"error while processing postfix query {postfix_query}. Should obtain a result of len 1 but got {relevant_docs_stack}")
+    return relevant_docs_stack.pop()

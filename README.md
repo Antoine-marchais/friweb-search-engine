@@ -8,7 +8,8 @@ A link to the course can be found [here](http://web.stanford.edu/class/cs276/), 
 We're using **Python 3.7+**.
 
 Download the collection and extract it in the `data` directory, under a `collection directory` :
-```
+
+```bash
 .
 ├── data
 │   └── collection
@@ -18,11 +19,13 @@ Download the collection and extract it in the `data` directory, under a `collect
 ├── preprocess.py
 ...
 ```
-install the necessary modules : `pip install -r requirements.txt`
 
-You can also run `make install`.
+We assume you're in a correct new *Virtual Environnement*, with `python` launching a Python 3.7+.
+
+You can run `make install`.
+
+Or Install the necessary modules : `pip install -r requirements.txt`, and the minimal *nltk* modules : `python -m nltk.downloader popular`.
 
 ## Testing
 
 Run `make test`.
-

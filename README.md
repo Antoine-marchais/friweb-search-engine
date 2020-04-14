@@ -5,6 +5,8 @@ A link to the course can be found [here](http://web.stanford.edu/class/cs276/), 
 
 ## setup
 
+We're using **Python 3.7+**.
+
 Download the collection and extract it in the `data` directory, under a `collection directory` :
 ```
 .
@@ -17,3 +19,4 @@ Download the collection and extract it in the `data` directory, under a `collect
 ...
 ```
 install the necessary modules : `pip install -r requirements.txt`
+

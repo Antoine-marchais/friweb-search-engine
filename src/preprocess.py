@@ -1,7 +1,8 @@
 import os
 import pickle as pkl
 
-from collections import OrderedDict
+from collections import OrderedDict, Counter
+from tqdm import tqdm
 from dataclasses import dataclass
 from typing import Optional, Dict, List, Union, Tuple
 
@@ -66,7 +67,7 @@ def tokenize_document(document: str) -> List[str]:
 
 def tokenize_collection(collection: Dict[str, str]) -> Dict[str, List[str]]:
     new_collection = OrderedDict()
-    for key in collection:
+    for key in tqdm(collection, desc="tokenizing collection : "):
         new_collection[key] = tokenize_document(collection[key])
 
     return new_collection
@@ -102,7 +103,7 @@ def remove_stop_words_collection(collection: Dict[str, List[str]], stop_word_pat
     """
     stp = load_stop_words(stop_word_path)
     new_corpus = {}
-    for key in collection.keys():
+    for key in tqdm(collection, desc="removing stop words"):
         new_corpus[key] = remove_stop_words_from_document(collection[key], stp, [])
     return new_corpus
 
@@ -113,6 +114,11 @@ def lemmatize_one_token(token: str, lemmatizer: StemmerI) -> str:
     tags = pos_tag([token])
     tag = tags[0]
     return lemmatizer.lemmatize(tag[0], get_wordnet_pos(tag[1]))
+
+def lemmatize_doc(tokens: List[str]) -> List[str]:
+    stemmer = WordNetLemmatizer()
+    tags = pos_tag(tokens)
+    return [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
 
 def lemmatize_collection(segmented_collection: Dict[str, List[str]]) -> Dict[str, List[str]]:
     """Lemmatize all articles in corpus using pos tags
@@ -125,13 +131,54 @@ def lemmatize_collection(segmented_collection: Dict[str, List[str]]) -> Dict[str
     """
     lemmatized_collection = {}
     stemmer = WordNetLemmatizer() # initialisation d'un lemmatiseur
-    for key in segmented_collection.keys():
+    for key in tqdm(segmented_collection, desc="lemmatizing collection"):
         tags = pos_tag(segmented_collection[key])
         lemmatized_collection[key] = [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
     return lemmatized_collection
 
 def construct_documents_mapping(collection: Dict[str, List[str]]) -> List[str]:
     return collection.keys()
+
+@dataclass
+class StatCollection:
+    """
+    Usefull stats of a collection:
+
+    'self.nb_docs' is the number of docs in the collection
+    'self.doc_stats' is a dictionary that provides for a given article id its collection
+    """
+    nb_docs: int
+    doc_stats: Dict[int, Dict[str, float]]
+
+def get_stats_document(document: List[str]) -> Dict[str, float]:
+    """Computes usefull stats for a document
+    
+    Arguments:
+        document {List[str]} -- lemmatized document
+    
+    Returns:
+        Dict[str, float] -- max frequency, mid frequency and unique count in the document
+    """
+    stats={}
+    frequencies = Counter(document)
+    stats["freq_max"] = max(frequencies.values())
+    stats["moy_freq"] = sum(frequencies.values())/len(frequencies)
+    stats["unique"] = len(frequencies.values())
+    return stats
+
+def get_stats_collection(processed_collection: Dict[int, List[str]]) -> StatCollection:
+    """Computes usefull stats for the collection
+    
+    Arguments:
+        processed_collection {Dict[str, List[str]]} -- collection of lemmatized articles
+    
+    Returns:
+        StatCollection -- Statictics of the collection
+    """
+    stats={}
+    for key in processed_collection:
+        stats[key] = get_stats_document(processed_collection[key])
+    return StatCollection(len(processed_collection), stats)
 
 @dataclass
 class InvertedIndex:
@@ -152,7 +199,7 @@ class InvertedIndex:
         Dict[str, Dict[int, List[int]]] # itype == 3
         ]
     mapping: Dict[int, str]
-
+    stats: StatCollection
 
 def build_inverted_index(
     collection: Dict[str, str],
@@ -179,7 +226,7 @@ def build_inverted_index(
 
     doc_id = 0
     if type_index == 1:
-        for document in collection:
+        for document in tqdm(collection, desc="building index : "):
 
             for term in collection[document]:
                 if term in index.keys():
@@ -192,7 +239,7 @@ def build_inverted_index(
             doc_id += 1
 
     elif type_index ==2:
-        for document in collection:
+        for document in tqdm(collection, desc="building index : "):
             for term in collection[document]:
                 if term in index.keys():
                     if doc_id in index[term].keys():
@@ -207,7 +254,7 @@ def build_inverted_index(
             doc_id += 1
 
     elif type_index==3:
-        for document in collection:
+        for document in tqdm(collection, desc="building index : "):
             pos=0
             for term in collection[document]:
                 if term in index.keys():
@@ -222,11 +269,12 @@ def build_inverted_index(
             
             mapping[doc_id] = document
             doc_id += 1
-    
     else:
         raise Exception(f"index type '{type_index}' is not supported")
+
+    stats = get_stats_collection({doc_id:collection[mapping[doc_id]] for doc_id in mapping})
     
-    return InvertedIndex(type_index, index, mapping)
+    return InvertedIndex(type_index, index, mapping, stats)
 
 def get_wordnet_pos(treebank_tag: str) -> str:
     """Convert treebank tags into wordnet POS tag"""
@@ -254,8 +302,7 @@ if __name__ == "__main__" :
             with open(PATH_DATA_BIN,"wb") as f:
                 pkl.dump(corpus, f)
     
-    print("creating inverted index")
-    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=1)
+    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=2)
     print("saving index")
     with open(PATH_INDEX,"wb") as f:
         pkl.dump(index,f)

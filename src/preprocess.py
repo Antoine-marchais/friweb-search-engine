@@ -7,6 +7,7 @@ from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, P
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
+from tqdm import tqdm
 
 def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int]=None) -> Dict[str, List[str]]:
     """Read file and import tokens into a new collection
@@ -61,7 +62,7 @@ def remove_stop_words(collection: Dict[str, List[str]], stop_word_path: str) -> 
     with open(stop_word_path,"r") as f:
         stp = [word.lower() for word in f.read().split("\n") if word != ""]
     new_corpus = {}
-    for key in collection.keys():
+    for key in tqdm(collection.keys(),desc="removing stop words : "):
         new_corpus[key] = [word for word in collection[key] if word not in stp]
     return new_corpus
 
@@ -76,7 +77,7 @@ def collection_lemmatize(segmented_collection: Dict[str, List[str]]) -> Dict[str
     """
     lemmatized_collection = {}
     stemmer = WordNetLemmatizer() # initialisation d'un lemmatiseur
-    for key in segmented_collection.keys():
+    for key in tqdm(segmented_collection.keys(), desc="lemmatizing collection : "):
         tags = pos_tag(segmented_collection[key])
         lemmatized_collection[key] = [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
     return lemmatized_collection

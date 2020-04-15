@@ -16,7 +16,8 @@ TEST_INVERTED_INDEX_1 = InvertedIndex(
         4: "The trial - Kafka",
         5: "How to hunt with a dog",
         6: "Vingt mille lieues sous les mers"
-    }
+    },
+    stats=None
 )
 
 def test_bool_query_no_operator():

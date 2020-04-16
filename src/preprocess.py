@@ -199,6 +199,7 @@ class InvertedIndex:
     mapping: OrdDict[int, str]
 
 
+# TODO: @Antoine-marchais : This part could be refactored with auxiliary function for lisibility.
 def build_inverted_index(
     collection: OrdDict[str, str],
     stop_words_path: str,

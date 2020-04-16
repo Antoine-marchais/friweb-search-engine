@@ -4,7 +4,7 @@ import pickle as pkl
 from collections import OrderedDict, Counter
 from tqdm import tqdm
 from dataclasses import dataclass
-from typing import Optional, Dict, List, Union, Tuple
+from typing import Optional, List, Union, Tuple, Any, OrderedDict as OrdDict
 
 from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN
 from nltk import pos_tag
@@ -14,7 +14,7 @@ from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
 
 
-def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int]=None) -> Dict[str, List[str]]:
+def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int]=None) -> OrdDict[str, str]:
     """Read file and import tokens into a new collection
     
     Arguments:
@@ -25,7 +25,7 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
         dev_iter {Optional[int]} -- number of iterations in dev mode (default: {None})
     
     Returns:
-        Dict[str, List[str]] -- The loaded corpus
+        Dict[str, str] -- The loaded corpus
     """
     corpus = OrderedDict()
     for n_dir in os.listdir(path):
@@ -40,7 +40,7 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
                 corpus[os.path.join(n_dir,filename)] = f.read()
     return corpus
 
-def load_corpus_from_binary(path: str) -> Dict[str, List[str]]:
+def load_corpus_from_binary(path: str) -> OrdDict[str, str]:
     """Load corpus from binary file
     
     Arguments:
@@ -62,17 +62,33 @@ def tokenize_document(document: str) -> List[str]:
     Returns:
         List[str] -- lowered tokens
     """
-    tokens = word_tokenize(document)
+    tokens = word_tokenize(document.lower())
     return [tok.lower() for tok in tokens]
 
-def tokenize_collection(collection: Dict[str, str]) -> Dict[str, List[str]]:
-    new_collection = OrderedDict()
+def tokenize_collection(collection: OrdDict[str, str]) -> OrdDict[str, List[str]]:
+    """tokenize a collection
+    
+    Arguments:
+        collection {OrdDict[str, str]} -- the collection to tokenize
+    
+    Returns:
+        OrdDict[str, List[str]] -- tokenized collection
+    """
+    new_collection = OrderedDict()    
     for key in tqdm(collection, desc="tokenizing collection : "):
         new_collection[key] = tokenize_document(collection[key])
 
     return new_collection
 
 def load_stop_words(stop_word_path: str) -> List[str]:
+    """load the list of stop words from a file
+    
+    Arguments:
+        stop_word_path {str} -- path for the stop words files
+    
+    Returns:
+        List[str] -- list of stop words
+    """    
     with open(stop_word_path,"r") as f:
         stp = [word.lower() for word in f.read().split("\n") if word != ""]
     return stp
@@ -81,25 +97,26 @@ def remove_stop_words_from_document(d: List[str], stop_words: List[str], excepti
     """remove stop words from a list, except for tokens specified in exceptions
 
     Arguments:
-        d {List[str]} -- [description]
-        stop_word_path {str} -- [description]
-        exceptions {List[str]} -- [description]
+        d {List[str]} -- tokenized document
+        stop_word_path {List[str]} -- list of stop words
+        exceptions {List[str]} -- exceptions, which might exist in the stop word list but should not be deleted for this run
+                                  For example, AND, OR or NAND for boolean queries.
 
     Returns:
-        List[str] -- [description]
+        List[str] -- tokenized document without the stop words
     """
     
     return [word for word in d if (word in exceptions) or (word not in stop_words)]
 
-def remove_stop_words_collection(collection: Dict[str, List[str]], stop_word_path: str) -> Dict[str, List[str]]:
+def remove_stop_words_collection(collection: OrdDict[str, List[str]], stop_word_path: str) -> OrdDict[str, List[str]]:
     """remove all stop words from corpus given a stop words file
     
     Arguments:
-        collection {Dict[str, List[str]]} -- corpus of split articles
+        collection {OrdDict[str, List[str]]} -- corpus of split articles
         stop_word_path {string} -- path of the stop words file
     
     Returns:
-        {Dict[str, List[str]]} -- updated corpus
+        {OrdDict[str, List[str]]} -- updated corpus
     """
     stp = load_stop_words(stop_word_path)
     new_corpus = {}
@@ -108,36 +125,59 @@ def remove_stop_words_collection(collection: Dict[str, List[str]], stop_word_pat
     return new_corpus
 
 def get_lemmatizer() -> StemmerI:
-    return WordNetLemmatizer()
+    """generate a lemmatizer
+    
+    Returns:
+        StemmerI -- lemmatizer
+    """
+    return WordNetLemmatizer()    
 
-def lemmatize_one_token(token: str, lemmatizer: StemmerI) -> str:
-    tags = pos_tag([token])
-    tag = tags[0]
-    return lemmatizer.lemmatize(tag[0], get_wordnet_pos(tag[1]))
+def lemmatize_document(document: List[str], lemmatizer: StemmerI = get_lemmatizer()) -> List[str]:
+    """
+    lemmatize a single sentence, document, query.
+    Having a full sentence/query/document allows to use the context for a better lemmatization.
+    
+    Arguments:
+        sentence {List[str]} -- tokenized sentence
+    
+    Keyword Arguments:
+        lemmatizer {StemmerI} -- lemmatizer (default: {get_lemmatizer()}) - generate one if necessary
+    
+    Returns:
+        str -- [description]
+    """
+   
+    tags = pos_tag(document)
+    return [lemmatizer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
 
-def lemmatize_doc(tokens: List[str]) -> List[str]:
-    stemmer = WordNetLemmatizer()
-    tags = pos_tag(tokens)
-    return [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
-
-def lemmatize_collection(segmented_collection: Dict[str, List[str]]) -> Dict[str, List[str]]:
+def lemmatize_collection(segmented_collection: OrdDict[str, List[str]]) -> OrdDict[str, List[str]]:
     """Lemmatize all articles in corpus using pos tags
     
     Arguments:
-        segmented_collection {Dict[str, List[str]]} -- corpus without stop words
+        segmented_collection {OrdDict[str, List[str]]} -- corpus without stop words
     
     Returns:
-        {Dict[str, List[str]]} -- lemmatized corpus
+        {OrdDict[str, List[str]]} -- lemmatized corpus
     """
-    lemmatized_collection = {}
+    lemmatized_collection = OrderedDict()
     stemmer = WordNetLemmatizer() # initialisation d'un lemmatiseur
-    for key in tqdm(segmented_collection, desc="lemmatizing collection"):
-        tags = pos_tag(segmented_collection[key])
-        lemmatized_collection[key] = [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
+    for key in tqdm(segmented_collection, desc="lemmatizing collection : "):
+        lemmatized_collection[key] = lemmatize_document(segmented_collection[key], stemmer)
     return lemmatized_collection
 
-def construct_documents_mapping(collection: Dict[str, List[str]]) -> List[str]:
-    return collection.keys()
+def construct_documents_mapping(collection: OrdDict[str, Any]) -> OrdDict[int, str]:
+    """get the default mapping between documents paths and ids for an inverted index
+    
+    Arguments:
+        collection {OrdDict[str, Any]} -- collection 
+    
+    Returns:
+        List[str] -- [description]
+    """    
+    mapping = OrderedDict()
+    for idx, key in enumerate(collection.keys()):
+        mapping[idx] = key
+    return mapping
 
 @dataclass
 class StatCollection:
@@ -148,9 +188,9 @@ class StatCollection:
     'self.doc_stats' is a dictionary that provides for a given article id its collection
     """
     nb_docs: int
-    doc_stats: Dict[int, Dict[str, float]]
+    doc_stats: OrdDict[int, OrdDict[str, float]]
 
-def get_stats_document(document: List[str]) -> Dict[str, float]:
+def get_stats_document(document: List[str]) -> OrdDict[str, float]:
     """Computes usefull stats for a document
     
     Arguments:
@@ -166,7 +206,7 @@ def get_stats_document(document: List[str]) -> Dict[str, float]:
     stats["unique"] = len(frequencies.values())
     return stats
 
-def get_stats_collection(processed_collection: Dict[int, List[str]]) -> StatCollection:
+def get_stats_collection(processed_collection: OrdDict[int, List[str]]) -> StatCollection:
     """Computes usefull stats for the collection
     
     Arguments:
@@ -194,28 +234,29 @@ class InvertedIndex:
     """
     itype: int
     index: Union[
-        Dict[str, List[int]], # itype == 1
-        Dict[str, Dict[int, int]], # itype == 2
-        Dict[str, Dict[int, List[int]]] # itype == 3
+        OrdDict[str, List[int]], # itype == 1
+        OrdDict[str, OrdDict[int, int]], # itype == 2
+        OrdDict[str, OrdDict[int, List[int]]] # itype == 3
         ]
-    mapping: Dict[int, str]
+    mapping: OrdDict[int, str]
     stats: StatCollection
 
+# TODO: @Antoine-marchais : This part could be refactored with auxiliary function for lisibility.
 def build_inverted_index(
-    collection: Dict[str, str],
+    collection: OrdDict[str, str],
     stop_words_path: str,
     type_index: int = 1,
     ) -> InvertedIndex:
-    """Build an inverted index from a processed corpus
+    """Build an inverted index from a corpus
     
     Arguments:
-        collection {dict} -- processed corpus
+        collection {OrdDict[str, str]} -- corpus
     
     Keyword Arguments:
         type_index {int} -- type of index : document(1) frequency(2) position(3) (default: {1})
     
     Returns:
-        dict -- inverted index of given type
+        {InvertedIndex} -- inverted index of given type
     """
     collection = tokenize_collection(collection)
     collection = remove_stop_words_collection(collection, stop_words_path)

@@ -15,3 +15,4 @@ def test_build_dev_inverted_index():
     index_type2 = build_inverted_index(COLLECTION, PATH_STOP_WORDS, type_index=2)
     assert INVERTED_INDEX_2 == index_type2
 
+# TODO: we could optimize the test speed by lemmatizing the corpus once, and then creating the three different index

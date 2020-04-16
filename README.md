@@ -91,6 +91,28 @@ We support three index types:
 {"information": {1: [1, 19], 4: [0, 2, 5]}} # the term 'information' appears in docs 1 (at position 1 and 19) and 4 (at position at 0, 2 and 5)
 ```
 
+## Querying
+
+### Loading the index
+
+**TODO** the time it takes
+
+### Boolean querying
+
+If the request is entered as *boolean*, we therefore except that it is syntactically correct. We support three logical operator :
+
+- **AND** : `term1 AND term2` will return documents containing both `term1` or `term2`
+- **OR** : `term1 AND term2` will return documents containing `term1`, `term2` or both
+- **NAND** : which means **AND NOT**, `term1 NAND term2` will return documents containing `term1` but not `term2`.
+
+You can also use *parenthesis* for a better query expression. Otherwise, by default, `ttable` has the following default priorities (or *[precedence](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence)*) for operators : `NAND > AND > OR`, ie `cats OR dogs NAND ducks AND squid` will be interpreted as `(cats OR ((dogs NAND ducks) AND squid))`
+
+First, we tokenize, remove stop words and lemmatize the query, except for the *logical operators*. Then, we use `ttable` to transform the query into its *postfix syntax*, which will remove parenthesis and change the order of tokens and logical operator. It is then easy to process the query : read the postfix query sequentially. If you have a token, add the list of documents with this token (with the inverted index). Ortherwise, its a logical operator, apply a merge with this operator and the last two elements of the stack.
+
+If you don't specify any logical operator, we assume it's an **AND** request : `cats dog duck` --> `cats AND dog AND duck`.
+
+### Vectorial querying
+
 ## Testing
 
 Run `make test`.

@@ -94,3 +94,11 @@ INVERTED_INDEX_2 = InvertedIndex(
         }
     )
 )
+
+def get_index(index_type):
+    if index_type == 1:
+        return INVERTED_INDEX_1
+    elif index_type == 2:
+        return INVERTED_INDEX_2
+    else :
+        raise NotImplementedError

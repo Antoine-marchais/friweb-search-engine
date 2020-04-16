@@ -14,5 +14,4 @@ def test_get_scores():
     # here we check that query results are ordered as expected
     test_query_2 = vq.lemmatize_query("dumb test query")
     scores = vq.get_scores(test_query_2, INVERTED_INDEX_2)
-    print(scores)
     assert scores[0] > scores[4]

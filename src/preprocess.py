@@ -119,7 +119,7 @@ def remove_stop_words_collection(collection: OrdDict[str, List[str]], stop_word_
         {OrdDict[str, List[str]]} -- updated corpus
     """
     stp = load_stop_words(stop_word_path)
-    new_corpus = {}
+    new_corpus = OrderedDict()
     for key in tqdm(collection, desc="removing stop words"):
         new_corpus[key] = remove_stop_words_from_document(collection[key], stp, [])
     return new_corpus
@@ -191,7 +191,7 @@ class StatCollection:
     Usefull stats of a collection:
 
     'self.nb_docs' is the number of docs in the collection
-    'self.doc_stats' is a dictionary that provides for a given article id its collection
+    'self.doc_stats' is a dictionary that provides for a given article id its statistics (freq_max, moy_freq, unique)
     """
     nb_docs: int
     doc_stats: Dict[int, Dict[str, float]]
@@ -205,7 +205,7 @@ def get_stats_document(document: List[str]) -> Dict[str, float]:
     Returns:
         Dict[str, float] -- max frequency, mid frequency and unique count in the document
     """
-    stats={}
+    stats=OrderedDict()
     frequencies = Counter(document)
     stats["freq_max"] = max(frequencies.values())
     stats["moy_freq"] = sum(frequencies.values())/len(frequencies)

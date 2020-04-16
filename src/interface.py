@@ -19,21 +19,14 @@ def retrieve_docs_from_bool_query(query: str, inverted_index: InvertedIndex) -> 
             new_query.append("and")
         new_query.pop()
         lemmatized_query = new_query
-    
-    print(lemmatized_query)
-    
+        
     postfix_query = bq.query_to_postfix(lemmatized_query)
-
-    print(postfix_query)
-
     relevant_documents_id = bq.process_postfix_query(postfix_query, inverted_index.index)
 
     return [inverted_index.mapping[doc_id] for doc_id in relevant_documents_id]
 
 def retrieve_docs_from_vectorial_query(query: str, inverted_index: InvertedIndex, n_results: int) -> List[str]:
     lemmatized_query = vq.lemmatize_query(query)
-
-    print(lemmatized_query)
     
     ids_and_scores = vq.get_scores(lemmatized_query, inverted_index)
     best_ids_and_scores = sorted(list(ids_and_scores.items()), key=lambda id_and_score: id_and_score[1], reverse=True)[:n_results]

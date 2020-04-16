@@ -35,10 +35,13 @@ def get_scores(
     query_norm = 0
     words = Counter(query)
     stats_collection = inverted_index.stats
+    assert inverted_index.itype == 2
     frequency_index = inverted_index.index
     for term in words:
         if weighting_scheme_query == "binary":
             weight_query = 1
+            
+        #fall back to term frequency for the query
         else : 
             weight_query = words[term]
         query_norm += weight_query**2
@@ -56,6 +59,8 @@ def get_scores(
                     tf_document = get_tf_logarithmique(term, doc_ID, frequency_index)
                     idf_document = get_idf(term, frequency_index, stats_collection.nb_docs)
                     weight_document = tf_document*idf_document
+                
+                #fall back to tf_idf_log_normalize
                 else:
                     tf_document = get_tf_logarithme_normalize(term, doc_ID, frequency_index, stats_collection)
                     idf_document = get_idf(term, frequency_index, stats_collection.nb_docs)

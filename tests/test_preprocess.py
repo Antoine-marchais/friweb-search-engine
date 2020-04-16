@@ -6,24 +6,21 @@ from preprocess import create_corpus_from_files, build_inverted_index, InvertedI
 import pickle
 import pytest
 
+# only called once in the test file
+@pytest.fixture(scope="module")
+def corpus():
+    return create_corpus_from_files(PATH_DATA, dev=True, dev_iter=100)
+
 @pytest.mark.xfail(reason="data is not imported in the repo +  pickle doesn't load properly the data")
-def test_build_dev_inverted_index():
-    
-    corpus = create_corpus_from_files(PATH_DATA, dev=True, dev_iter=100)
+@pytest.mark.parametrize(
+    "index_type",
+    [1, 2, 3],
+)
+def test_build_dev_inverted_index_type(corpus, index_type):
     test_index: InvertedIndex = None
-
-    index_type1 = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=1)
-    with open("tests/test_index_type1_100.pkl", "rb") as f:
+    built_index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=index_type)
+    with open(f"tests/test_index_type{index_type}_100.pkl", "rb") as f:
         test_index = pickle.load(f)
-    assert test_index == index_type1
+    assert test_index == built_index
 
-    index_type2 = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=2)
-    with open("tests/test_index_type2_100.pkl", "rb") as f:
-        test_index = pickle.load(f)
-    assert test_index == index_type2
-
-    index_type3 = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=3)
-    with open("tests/test_index_type3_100.pkl", "rb") as f:
-        test_index = pickle.load(f)
-    assert test_index == index_type3
-
+# TODO: we could optimize the test speed by lemmatizing the corpus once, and then creating the three different index

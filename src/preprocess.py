@@ -80,6 +80,37 @@ def tokenize_collection(collection: OrdDict[str, str]) -> OrdDict[str, List[str]
 
     return new_collection
 
+def filter_function(token: str) -> bool:
+    """determines if a token should be kept
+    
+    Arguments:
+        token {str} -- word to filter
+    
+    Returns:
+        bool -- True if the token should be filtered out
+    """
+    filter_out = False
+    if token.isnumeric():
+        filter_out = True
+    elif not token.isalnum():
+        filter_out = True
+    return filter_out
+
+def filter_collection(collection: OrdDict[str, str]) -> OrdDict[str, List[str]]:
+    """
+    filter the collection removing numbers and special caracters
+
+    Arguments:
+        collection {OrdDict[str, str]} -- the collection to filter
+    
+    Returns:
+        OrdDict[str, List[str]] -- filtered_collection
+    """
+    new_collection = OrderedDict()
+    for key in collection:
+        new_collection[key] = [token in collection[key] if not filter_function(token)]
+
+
 def load_stop_words(stop_word_path: str) -> List[str]:
     """load the list of stop words from a file
     

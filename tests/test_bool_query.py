@@ -1,10 +1,10 @@
-from typing import Dict
+from typing import OrderedDict
 
 from bool_query import *
 
 import pytest
 
-TEST_INVERTED_INDEX: Dict[str, int] = {
+TEST_INVERTED_INDEX: OrderedDict[str, int] = {
     "cat": [1, 2, 3],
     "dog": [1, 3, 5],
     "duck": [1, 5],

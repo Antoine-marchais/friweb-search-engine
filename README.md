@@ -113,6 +113,8 @@ If you don't specify any logical operator, we assume it's an **AND** request : `
 
 ### Vectorial querying
 
+Here we're making a dot product between a vector representing the query and the vector representing the dataset. 
+
 ## Testing
 
 Run `make test`.

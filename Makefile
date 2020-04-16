@@ -1,5 +1,5 @@
 install:
-	pip3 install -r requirements.txt
-
+	pip install -r requirements.txt
+	python -m nltk.downloader popular
 test:
-	PYTHONPATH=. pytest
+	pytest

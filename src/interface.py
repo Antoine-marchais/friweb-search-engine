@@ -5,10 +5,11 @@ import bool_query as bq
 import vectorial_query as vq
 import argparse
 from preprocess import InvertedIndex, StatCollection
-from config import PATH_INDEX
 
-def retrieve_docs_from_bool_query(query: str, inverted_index: InvertedIndex, n_results: int = 100) -> List[str]:
-    lemmatized_query = bq.lemmatize_query(query)
+from config import PATH_INDEX, POS
+
+def retrieve_docs_from_bool_query(query: str, inverted_index: InvertedIndex, n_results: int = 100, pos: bool = True) -> List[str]:
+    lemmatized_query = bq.lemmatize_query(query, pos=pos)
 
     # if no logical operator in the query, we assumes it's a "and"
     # "dog cat" -> "dog and cat"
@@ -25,8 +26,8 @@ def retrieve_docs_from_bool_query(query: str, inverted_index: InvertedIndex, n_r
 
     return [inverted_index.mapping[doc_id] for doc_id in relevant_documents_id][:n_results]
 
-def retrieve_docs_from_vectorial_query(query: str, inverted_index: InvertedIndex, n_results: int) -> List[str]:
-    lemmatized_query = vq.lemmatize_query(query)
+def retrieve_docs_from_vectorial_query(query: str, inverted_index: InvertedIndex, n_results: int, pos: bool = True) -> List[str]:
+    lemmatized_query = vq.lemmatize_query(query, pos=pos)
     
     ids_and_scores = vq.get_scores(lemmatized_query, inverted_index)
     best_ids_and_scores = sorted(list(ids_and_scores.items()), key=lambda id_and_score: id_and_score[1], reverse=True)[:n_results]
@@ -42,9 +43,9 @@ if __name__ == "__main__" :
     with open(PATH_INDEX, "rb") as f:
         inverted_index = pkl.load(f)
     if args.model == "boolean":
-        print("\n".join(retrieve_docs_from_bool_query(args.query, inverted_index, args.number)))
+        print("\n".join(retrieve_docs_from_bool_query(args.query, inverted_index, args.number, pos=POS)))
     elif args.model == "vectorial":
-        print("\n".join(retrieve_docs_from_vectorial_query(args.query, inverted_index, args.number)))
+        print("\n".join(retrieve_docs_from_vectorial_query(args.query, inverted_index, args.number, pos=POS)))
 
 
     

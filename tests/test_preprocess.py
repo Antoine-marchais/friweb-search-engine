@@ -7,12 +7,13 @@ from mock_data import COLLECTION, get_index
 import pickle
 import pytest
 
-
 @pytest.mark.xfail(reason="data is not imported in the repo +  pickle doesn't load properly the data")
 @pytest.mark.parametrize(
     "index_type",
     [1, 2],
 )
 def test_build_dev_inverted_index(index_type):
-    index_type1 = build_inverted_index(COLLECTION, PATH_STOP_WORDS, type_index=1)
-    assert get_index(index_type) == index_type1
+    inverted_index = build_inverted_index(COLLECTION, PATH_STOP_WORDS, type_index=index_type)
+    assert get_index(index_type).index == inverted_index.index
+    assert get_index(index_type).itype == inverted_index.itype
+    assert get_index(index_type).stats == inverted_index.stats

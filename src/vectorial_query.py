@@ -1,14 +1,14 @@
 from config import WEIGHT_DOCUMENT, WEIGHT_QUERY, PATH_STOP_WORDS
 from collections import Counter
 import math
-from preprocess import InvertedIndex, StatCollection, lemmatize_doc, tokenize_document, load_stop_words, remove_stop_words_from_document
+from preprocess import InvertedIndex, StatCollection, lemmatize_document, tokenize_document, load_stop_words, remove_stop_words_from_document
 from typing import Optional, Dict, List, Union, Tuple
 
 def lemmatize_query(query: str) -> List[str]:
     tokens = tokenize_document(query)
     stop_words = load_stop_words(PATH_STOP_WORDS)
     tokens = remove_stop_words_from_document(tokens, stop_words, [])
-    tokens = lemmatize_doc(tokens)
+    tokens = lemmatize_document(tokens)
     return tokens
 
 def get_scores(

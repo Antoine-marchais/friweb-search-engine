@@ -5,7 +5,7 @@ import argparse
 from collections import OrderedDict, Counter
 from tqdm import tqdm
 from dataclasses import dataclass
-from typing import Optional, List, Union, Tuple, Any, OrderedDict as OrdDict
+from typing import Optional, List, Union, Tuple, Any, Dict, OrderedDict as OrdDict
 
 from utils import timer
 from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN

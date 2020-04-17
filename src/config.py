@@ -9,5 +9,7 @@ PATH_DATA_BIN = os.path.join(cwd,"data","corpus.pkl")
 PATH_STOP_WORDS = os.path.join(cwd, "data", "stop_words.txt")
 PATH_INDEX = os.path.join(cwd, "data", "index.pkl") if not DEV_MODE else os.path.join(cwd, "data", "dev_index.pkl")
 
+POS = False
+
 WEIGHT_QUERY = "tf_idf"
 WEIGHT_DOCUMENT = "tf_idf_logarithmic_normalize"

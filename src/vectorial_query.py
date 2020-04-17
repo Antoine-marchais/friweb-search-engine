@@ -4,11 +4,11 @@ import math
 from preprocess import InvertedIndex, StatCollection, lemmatize_document, tokenize_document, load_stop_words, remove_stop_words_from_document
 from typing import Optional, Dict, List, Union, Tuple
 
-def lemmatize_query(query: str) -> List[str]:
+def lemmatize_query(query: str, pos:bool = True) -> List[str]:
     tokens = tokenize_document(query)
     stop_words = load_stop_words(PATH_STOP_WORDS)
     tokens = remove_stop_words_from_document(tokens, stop_words, [])
-    tokens = lemmatize_document(tokens)
+    tokens = lemmatize_document(tokens, pos=pos)
     return tokens
 
 def get_scores(

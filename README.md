@@ -52,20 +52,27 @@ Notebook ?
 
 We simply open all files in the `collection` folder, loading the content in memory into a dictionnary.
 
+Since there is almost 100 000 documents, it takes aroud **25 sec** to load all the files. To avoid waiting for this operation, we save the corpus once fully loaded as a binary with `pickle` at `data/corpus.pkl`. This file takes only *161 Mo* and is loaded in **0.38 sec**.
+
 ### Tokenization
 
 The data set is already tokenized, but we still this process for queries.
 We use the tokenization provided with `nltk`, which is more precise than a simple `split` on spaces, for numbers or `'s` for example.
+**88s**
 
 ### Stop words
 
 **TODO**: some stop words analysis
 
 We remove stop words before *lemmatization* but also after.
+**76sec** before
+**59sec** after
 
 ### Lemmatization
 
 For a better quality of lemmatization, we use the *context* of a token in a sentence, with the `pos_tag` function in `nltk`, which can indicate the grammatical use of a word : *fly* can be either a verb or a noun. The *WordNet* lemmatizer can take as argument this categorisation to give a precise result.
+
+It's long : **800 sec**, or 13min 20sec
 
 ### Inversed index construction
 
@@ -90,6 +97,8 @@ We support three index types:
 ```python
 {"information": {1: [1, 19], 4: [0, 2, 5]}} # the term 'information' appears in docs 1 (at position 1 and 19) and 4 (at position at 0, 2 and 5)
 ```
+
+It takes **1752 sec** 29m12
 
 ## Querying
 

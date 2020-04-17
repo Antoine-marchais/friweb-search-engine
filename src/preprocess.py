@@ -1,11 +1,13 @@
 import os
 import pickle as pkl
+import argparse
 
 from collections import OrderedDict, Counter
 from tqdm import tqdm
 from dataclasses import dataclass
 from typing import Optional, List, Union, Tuple, Any, OrderedDict as OrdDict
 
+from utils import timer
 from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN
 from nltk import pos_tag
 from nltk.stem.api import StemmerI
@@ -13,7 +15,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
 
-
+@timer
 def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int]=None) -> OrdDict[str, str]:
     """Read file and import tokens into a new collection
     
@@ -40,6 +42,7 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
                 corpus[os.path.join(n_dir,filename)] = f.read()
     return corpus
 
+@timer
 def load_corpus_from_binary(path: str) -> OrdDict[str, str]:
     """Load corpus from binary file
     
@@ -65,6 +68,7 @@ def tokenize_document(document: str) -> List[str]:
     tokens = word_tokenize(document.lower())
     return [tok.lower() for tok in tokens]
 
+@timer
 def tokenize_collection(collection: OrdDict[str, str]) -> OrdDict[str, List[str]]:
     """tokenize a collection
     
@@ -108,6 +112,7 @@ def remove_stop_words_from_document(d: List[str], stop_words: List[str], excepti
     
     return [word for word in d if (word in exceptions) or (word not in stop_words)]
 
+@timer
 def remove_stop_words_collection(collection: OrdDict[str, List[str]], stop_word_path: str) -> OrdDict[str, List[str]]:
     """remove all stop words from corpus given a stop words file
     
@@ -119,10 +124,18 @@ def remove_stop_words_collection(collection: OrdDict[str, List[str]], stop_word_
         {OrdDict[str, List[str]]} -- updated corpus
     """
     stp = load_stop_words(stop_word_path)
+    init_coll_size = get_collection_size(collection)
     new_corpus = OrderedDict()
     for key in tqdm(collection, desc="removing stop words"):
         new_corpus[key] = remove_stop_words_from_document(collection[key], stp, [])
+    end_coll_size = get_collection_size(new_corpus)
+
+    print(f"removing stop word : from {init_coll_size} tokens to {end_coll_size} : {end_coll_size/init_coll_size : .2%}")
+
     return new_corpus
+
+def get_collection_size(collection: OrdDict[str, List[str]]) -> int:
+    return sum([len(tokens) for tokens in collection.values()])
 
 def get_lemmatizer() -> StemmerI:
     """generate a lemmatizer
@@ -150,12 +163,8 @@ def lemmatize_document(document: List[str], lemmatizer: StemmerI = get_lemmatize
     tags = pos_tag(document)
     return [lemmatizer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
 
-def lemmatize_doc(tokens: List[str]) -> List[str]:
-    stemmer = WordNetLemmatizer()
-    tags = pos_tag(tokens)
-    return [stemmer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
-
-def lemmatize_collection(segmented_collection: Dict[str, List[str]]) -> Dict[str, List[str]]:
+@timer
+def lemmatize_collection(segmented_collection: OrdDict[str, List[str]]) -> OrdDict[str, List[str]]:
     """Lemmatize all articles in corpus using pos tags
     
     Arguments:
@@ -219,7 +228,8 @@ def get_stats_document(document: List[str]) -> Dict[str, float]:
     
     return stats
 
-def get_stats_collection(processed_collection: Dict[int, List[str]]) -> StatCollection:
+@timer
+def get_stats_collection(processed_collection: OrdDict[int, List[str]]) -> StatCollection:
     """Computes usefull stats for the collection
     
     Arguments:
@@ -255,6 +265,7 @@ class InvertedIndex:
     stats: StatCollection
 
 # TODO: @Antoine-marchais : This part could be refactored with auxiliary function for lisibility.
+@timer
 def build_inverted_index(
     collection: OrdDict[str, str],
     stop_words_path: str,
@@ -277,6 +288,7 @@ def build_inverted_index(
     collection = remove_stop_words_collection(collection, stop_words_path)
     mapping = OrderedDict()
     index = OrderedDict()
+    # docs_stats = OrderedDict()
 
     doc_id = 0
     if type_index == 1:
@@ -288,6 +300,9 @@ def build_inverted_index(
                         index[term].append(doc_id)
                 else:
                     index[term]=[doc_id]
+
+            
+            # docs_stats[doc_id] = get_stats_document(collection[document])
 
             mapping[doc_id] = document
             doc_id += 1
@@ -303,6 +318,8 @@ def build_inverted_index(
                 else:
                     index[term]=OrderedDict()
                     index[term][doc_id]=1
+
+            # docs_stats[doc_id] = get_stats_document(collection[document])
 
             mapping[doc_id] = document
             doc_id += 1
@@ -321,6 +338,9 @@ def build_inverted_index(
                     index[term][doc_id]=[pos]
                 pos += 1
             
+            
+            # docs_stats[doc_id] = get_stats_document(collection[document])
+
             mapping[doc_id] = document
             doc_id += 1
     else:
@@ -343,6 +363,11 @@ def get_wordnet_pos(treebank_tag: str) -> str:
         return wordnet.ADV
     else:
         return wordnet.NOUN
+
+@timer
+def save_index(index_path: str, index: InvertedIndex):
+    with open(PATH_INDEX,"wb") as f:
+        pkl.dump(index,f)
 
 
 if __name__ == "__main__" :

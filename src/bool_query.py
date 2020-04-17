@@ -15,7 +15,7 @@ class LOGICAL_TOKENS(Enum):
 LOGICAL_TOKENS_VALUES = [x.value for x in LOGICAL_TOKENS]
 
 
-def lemmatize_query(query: str) -> List[str]:
+def lemmatize_query(query: str, pos=True) -> List[str]:
     """lemmatize a single boolean query
     
     Arguments:
@@ -31,7 +31,7 @@ def lemmatize_query(query: str) -> List[str]:
     # first pass
     tokens = remove_stop_words_from_document(tokens, stop_words, LOGICAL_TOKENS_VALUES)
 
-    lemmatized_query = lemmatize_document(tokens)
+    lemmatized_query = lemmatize_document(tokens, pos=pos)
 
     assert len(lemmatized_query) == len(tokens), Exception("lemmatization should not remove tokens")
 

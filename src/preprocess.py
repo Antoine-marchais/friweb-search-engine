@@ -6,12 +6,13 @@ from tqdm import tqdm
 from dataclasses import dataclass
 from typing import Optional, List, Union, Tuple, Any, OrderedDict as OrdDict
 
-from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN
+from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN, POS
 from nltk import pos_tag
 from nltk.stem.api import StemmerI
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
+from nltk.stem import SnowballStemmer
 
 
 def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int]=None) -> OrdDict[str, str]:
@@ -107,8 +108,9 @@ def filter_collection(collection: OrdDict[str, str]) -> OrdDict[str, List[str]]:
         OrdDict[str, List[str]] -- filtered_collection
     """
     new_collection = OrderedDict()
-    for key in collection:
-        new_collection[key] = [token in collection[key] if not filter_function(token)]
+    for key in tqdm(collection, desc="filtering collection : "):
+        new_collection[key] = [token for token in collection[key] if not filter_function(token)]
+    return new_collection
 
 
 def load_stop_words(stop_word_path: str) -> List[str]:
@@ -153,17 +155,9 @@ def remove_stop_words_collection(collection: OrdDict[str, List[str]], stop_word_
     new_corpus = OrderedDict()
     for key in tqdm(collection, desc="removing stop words"):
         new_corpus[key] = remove_stop_words_from_document(collection[key], stp, [])
-    return new_corpus
+    return new_corpus 
 
-def get_lemmatizer() -> StemmerI:
-    """generate a lemmatizer
-    
-    Returns:
-        StemmerI -- lemmatizer
-    """
-    return WordNetLemmatizer()    
-
-def lemmatize_document(document: List[str], lemmatizer: StemmerI = get_lemmatizer()) -> List[str]:
+def lemmatize_document(document: List[str], pos: bool = True) -> List[str]:
     """
     lemmatize a single sentence, document, query.
     Having a full sentence/query/document allows to use the context for a better lemmatization.
@@ -172,16 +166,20 @@ def lemmatize_document(document: List[str], lemmatizer: StemmerI = get_lemmatize
         sentence {List[str]} -- tokenized sentence
     
     Keyword Arguments:
-        lemmatizer {StemmerI} -- lemmatizer (default: {get_lemmatizer()}) - generate one if necessary
+        pos {bool} -- use pos tagging for lemmatization
     
     Returns:
         str -- [description]
     """
-   
-    tags = pos_tag(document)
-    return [lemmatizer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
+    if pos :
+        lemmatizer = WordNetLemmatizer()
+        tags = pos_tag(document)
+        return [lemmatizer.lemmatize(tag[0],get_wordnet_pos(tag[1])) for tag in tags]
+    else : 
+        stemmer = SnowballStemmer("english")
+        return [stemmer.stem(token) for token in document]
 
-def lemmatize_collection(segmented_collection: OrdDict[str, List[str]]) -> OrdDict[str, List[str]]:
+def lemmatize_collection(segmented_collection: OrdDict[str, List[str]], pos: bool = True) -> OrdDict[str, List[str]]:
     """Lemmatize all articles in corpus using pos tags
     
     Arguments:
@@ -191,9 +189,8 @@ def lemmatize_collection(segmented_collection: OrdDict[str, List[str]]) -> OrdDi
         {OrdDict[str, List[str]]} -- lemmatized corpus
     """
     lemmatized_collection = OrderedDict()
-    stemmer = WordNetLemmatizer() # initialisation d'un lemmatiseur
     for key in tqdm(segmented_collection, desc="lemmatizing collection : "):
-        lemmatized_collection[key] = lemmatize_document(segmented_collection[key], stemmer)
+        lemmatized_collection[key] = lemmatize_document(segmented_collection[key], pos)
     return lemmatized_collection
 
 def construct_documents_mapping(collection: OrdDict[str, Any]) -> OrdDict[int, str]:
@@ -277,6 +274,7 @@ def build_inverted_index(
     collection: OrdDict[str, str],
     stop_words_path: str,
     type_index: int = 1,
+    pos: bool = True
     ) -> InvertedIndex:
     """Build an inverted index from a corpus
     
@@ -285,13 +283,15 @@ def build_inverted_index(
     
     Keyword Arguments:
         type_index {int} -- type of index : document(1) frequency(2) position(3) (default: {1})
+        pos {bool} -- use pos tagging for lemmatization
     
     Returns:
         {InvertedIndex} -- inverted index of given type
     """
     collection = tokenize_collection(collection)
     collection = remove_stop_words_collection(collection, stop_words_path)
-    collection = lemmatize_collection(collection)
+    collection = filter_collection(collection)
+    collection = lemmatize_collection(collection, pos)
     collection = remove_stop_words_collection(collection, stop_words_path)
     mapping = OrderedDict()
     index = OrderedDict()
@@ -374,7 +374,7 @@ if __name__ == "__main__" :
             with open(PATH_DATA_BIN,"wb") as f:
                 pkl.dump(corpus, f)
     
-    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=2)
+    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=2, pos=POS)
     print("saving index")
     with open(PATH_INDEX,"wb") as f:
         pkl.dump(index,f)

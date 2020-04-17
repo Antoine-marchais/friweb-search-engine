@@ -1,7 +1,7 @@
 import os
 
-DEV_MODE = True
-DEV_ITER = 100
+DEV_MODE = bool(os.getenv("DEV", default=False))
+DEV_ITER = int(os.getenv("DEV_ITER", default=100))
 
 cwd = os.getcwd()
 PATH_DATA = os.path.join(cwd,"data","collection")

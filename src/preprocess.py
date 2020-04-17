@@ -207,9 +207,16 @@ def get_stats_document(document: List[str]) -> Dict[str, float]:
     """
     stats=OrderedDict()
     frequencies = Counter(document)
-    stats["freq_max"] = max(frequencies.values())
-    stats["moy_freq"] = sum(frequencies.values())/len(frequencies)
-    stats["unique"] = len(frequencies.values())
+    if len(frequencies.values()) > 0:
+        stats["freq_max"] = max(frequencies.values())
+        stats["moy_freq"] = sum(frequencies.values())/len(frequencies)
+        stats["unique"] = len(frequencies.values())
+    else:
+        stats["freq_max"] = 0
+        stats["moy_freq"] = 0
+        stats["unique"] = 0
+    
+    
     return stats
 
 def get_stats_collection(processed_collection: Dict[int, List[str]]) -> StatCollection:
@@ -339,8 +346,15 @@ def get_wordnet_pos(treebank_tag: str) -> str:
 
 
 if __name__ == "__main__" :
-    print("reading files")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("index_type", type=int, help="type of the index to build")
+    args = parser.parse_args()
+
+    valid_index_types =  (1, 2, 3)
+    assert args.index_type in valid_index_types, Exception(f"invalid index type {args.index_type}, not in {valid_index_types}")
+    print("reading corpus")
     if os.path.exists(PATH_DATA_BIN) and not DEV_MODE:
+        print("loading from binary")
         corpus = load_corpus_from_binary(PATH_DATA_BIN)
     else:
         corpus = create_corpus_from_files(PATH_DATA, dev=DEV_MODE, dev_iter=DEV_ITER)
@@ -349,7 +363,8 @@ if __name__ == "__main__" :
             with open(PATH_DATA_BIN,"wb") as f:
                 pkl.dump(corpus, f)
     
-    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=2)
-    print("saving index")
+    print(f"build inverted index of type {args.index_type}")
+    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=args.index_type)
+    print("saving index with pickle")
     with open(PATH_INDEX,"wb") as f:
         pkl.dump(index,f)

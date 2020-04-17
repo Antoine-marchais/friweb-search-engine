@@ -7,7 +7,7 @@ import argparse
 from preprocess import InvertedIndex, StatCollection
 from config import PATH_INDEX
 
-def retrieve_docs_from_bool_query(query: str, inverted_index: InvertedIndex, n_results: int) -> List[str]:
+def retrieve_docs_from_bool_query(query: str, inverted_index: InvertedIndex, n_results: int = 100) -> List[str]:
     lemmatized_query = bq.lemmatize_query(query)
 
     # if no logical operator in the query, we assumes it's a "and"

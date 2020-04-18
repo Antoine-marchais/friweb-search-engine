@@ -35,7 +35,7 @@ def get_scores(
     query_norm = 0
     words = Counter(query)
     stats_collection = inverted_index.stats
-    assert inverted_index.itype == 2
+    assert inverted_index.itype == 2, f"need a frequency index (type 2) for a vectorial query, got index of type {inverted_index.itype}"
     frequency_index = inverted_index.index
     for term in words:
         if weighting_scheme_query == "binary":

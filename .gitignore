@@ -1,6 +1,7 @@
 data/*
 !data/stop_words.txt
 !data/stop_words_extended.txt
+!data/.gitignore
 .vscode/*
 
 # Byte-compiled / optimized / DLL files

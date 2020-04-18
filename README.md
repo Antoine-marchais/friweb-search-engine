@@ -293,6 +293,8 @@ By using a simpler stemmer, but more important by using the correct data structu
 | *Time (s)* | 15             | 80           | 66         | 141           | 51         | 17    | 6     | 370     |
 | *%*        | 4.05%          | 21.62%       | 17.84%     | 38.11%        | 13.78%     | 4.59% |  1.62%     | 100.00% |
 
+The index takes up *66Mo* on the disk.
+
 #### Simple Index with Part-Of-Speach lemmatization
 
 Here the lemmatization takes more time. The computer seemed to have more load (tokenization tooked longer)
@@ -302,12 +304,16 @@ Here the lemmatization takes more time. The computer seemed to have more load (t
 | Time (s) | 15             | 101          | 80         | 1150          | 73         | 17    | 2     | 1436    |
 | %        | 1.04%          | 7.03%        | 5.57%      | 80.08%        | 5.08%      | 1.18% | 0.14% | 100.00% |
 
+The index takes up *68Mo* on the disk.
+
 #### Frequency Index with stemmer
 
 | *Steps*    | Corpus loading | Tokenization | Stop words | Lemmatization | Stop words | Index | Stats | Total   |
 |----------|----------------|--------------|------------|---------------|------------|-------|-------|---------|
 | *Time (s)* | 15             | 92           | 76         | 167           | 57         | 20    | 6     | 427     |
 | *%*        | 3.51%          | 21.55%       | 17.80%     | 39.11%        | 13.35%     | 4.68% |  1.41%    | 100.00% |
+
+The index takes up *66Mo* on the disk.
 
 ## Querying
 

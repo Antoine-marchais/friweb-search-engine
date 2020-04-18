@@ -285,7 +285,7 @@ class InvertedIndex:
     """
     itype: int
     index: Union[
-        OrdDict[str, List[int]], # itype == 1
+        OrdDict[str, OrdDict[int, bool]], # itype == 1
         OrdDict[str, OrdDict[int, int]], # itype == 2
         OrdDict[str, OrdDict[int, List[int]]] # itype == 3
         ]
@@ -326,31 +326,34 @@ def build_inverted_index(
         for document in tqdm(collection, desc="building index : "):
 
             for term in collection[document]:
-                if term in index.keys():
-                    if doc_id not in index[term]:
-                        index[term].append(doc_id)
-                else:
-                    index[term]=[doc_id]
+
+                try:
+                    try:
+                        _ = index[term][doc_id]
+                        # if pass, do nothing
+                    except KeyError:
+                        index[term][doc_id]=1
+
+                except KeyError:
+                    index[term]=OrderedDict()
+                    index[term][doc_id]=1
 
             
-            # docs_stats[doc_id] = get_stats_document(collection[document])
-
             mapping[doc_id] = document
             doc_id += 1
 
     elif type_index ==2:
         for document in tqdm(collection, desc="building index : "):
             for term in collection[document]:
-                if term in index.keys():
-                    if doc_id in index[term].keys():
-                        index[term][doc_id] = index[term][doc_id] + 1
-                    else:
+                try:
+                    try:
+                        index[term][doc_id] += 1
+                    except KeyError:
                         index[term][doc_id]= 1
-                else:
+                except KeyError:
                     index[term]=OrderedDict()
                     index[term][doc_id]=1
 
-            # docs_stats[doc_id] = get_stats_document(collection[document])
 
             mapping[doc_id] = document
             doc_id += 1
@@ -359,19 +362,17 @@ def build_inverted_index(
         for document in tqdm(collection, desc="building index : "):
             pos=0
             for term in collection[document]:
-                if term in index.keys():
-                    if doc_id in index[term].keys():
+                try:
+                    try:
                         index[term][doc_id].append(pos)
-                    else:
+                    except KeyError:
                         index[term][doc_id]= [pos]
-                else:
+                except KeyError:
                     index[term]=OrderedDict()
                     index[term][doc_id]=[pos]
+
                 pos += 1
             
-            
-            # docs_stats[doc_id] = get_stats_document(collection[document])
-
             mapping[doc_id] = document
             doc_id += 1
     else:

@@ -397,14 +397,21 @@ def get_wordnet_pos(treebank_tag: str) -> str:
         return wordnet.NOUN
 
 @timer
+def load_index(index_path:str) -> InvertedIndex:
+    with open(index_path, "rb") as f:
+        return pkl.load(f)
+
+@timer
 def save_index(index_path: str, index: InvertedIndex):
-    with open(PATH_INDEX,"wb") as f:
+    with open(index_path,"wb") as f:
         pkl.dump(index,f)
 
 
 if __name__ == "__main__" :
     parser = argparse.ArgumentParser()
     parser.add_argument("index_type", type=int, help="type of the index to build")
+    parser.add_argument("--pos", type=bool, default=True, help="use the the Part-Of-Speech (pos) lemmatization, or simple stemmer (default=True)")
+    parser.add_argument("output", type=str, default=PATH_INDEX, help="path where the index will be saved")
     args = parser.parse_args()
 
     valid_index_types =  (1, 2, 3)
@@ -420,8 +427,7 @@ if __name__ == "__main__" :
             with open(PATH_DATA_BIN,"wb") as f:
                 pkl.dump(corpus, f)
     
-    print(f"build inverted index of type {args.index_type}")
-    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=args.index_type, pos=POS)
-    print("saving index with pickle")
-    with open(PATH_INDEX,"wb") as f:
-        pkl.dump(index,f)
+    print(f"build inverted index of type {args.index_type} {'with Part-Of-Speech lemmatization' if args.pos else 'with Snowball stemmer'}")
+    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=args.index_type, pos=args.pos)
+    print(f"saving index with pickle at {args.output}")
+    save_index(args.output, index)

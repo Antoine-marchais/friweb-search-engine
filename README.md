@@ -89,6 +89,26 @@ We support three index types:
 {"information": {1: [1, 19], 4: [0, 2, 5]}} # the term 'information' appears in docs 1 (at position 1 and 19) and 4 (at position at 0, 2 and 5)
 ```
 
+To create an index, a cli is provided with `[src/preprocess.py](src/preprocess.py)` :
+
+```bash
+> python src/preprocess.py --help
+usage: preprocess.py [-h] [--pos POS] index_type output
+
+positional arguments:
+  index_type  type of the index to build
+  output      path where the index will be saved
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --pos POS   use the the Part-Of-Speech (pos) lemmatization, or simple
+              stemmer (default=True)
+```
+
+For example to create an frequency index with the simple Snowball stemmer, saving it as a `pickle` binary, you can run `python src/preprocess.py 2 --pos False data/frequency_index_stem.pkl`.
+
+To reduce development time, we also have an environment variable for a `DEV` flag, which load less files from the corpus : `DEV=1 DEV_ITER=100 python src/preprocess.py 1`. By default, the index is saved in the `data` folder as `index.pkl` (or `dev_index.pkl`).
+
 ### First analysis
 
 **Note: We're doing the time benchmark on our working machines. Therefore the resuts can vary quite a lot depending of the work actually done on the computer, process launched by the OS, etc... These benchmarks are only here to give an general idea of the steps which can take some time.**
@@ -319,7 +339,7 @@ The index takes up *66Mo* on the disk.
 
 ### Loading the index
 
-**TODO** the time it takes
+Since we saved the index as a `pickle` binary the loading is quite fast, around **3 sec**.
 
 ### Boolean querying
 
@@ -339,6 +359,38 @@ If you don't specify any logical operator, we assume it's an **AND** request : `
 
 Here we're making a dot product between a vector representing the query and the vector representing the dataset.
 
+**TODO**: add a few more lines
+
+### Practical querying
+
+To use and execute queries, you can use the cli provided by `[src/interface.py](src/interface.py)`.
+
+```bash
+> python src/interface.py --help
+usage: interface.py [-h] [--model MODEL] [--number NUMBER] query
+
+positional arguments:
+  query                 query to process
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --model MODEL         <boolean|vectorial> model used to process query (default="boolean")
+  --number NUMBER, -n NUMBER
+                        number of results to display (default=10)
+```
+
+The path to the index or the stats used for vectorial query are configured through *Environnement variable*, which can also be modified in `[src/config.py](src/config.py)`.
+
+For example, if you want to use a custom index, for a vectorial query with a `tf_idf_log_normalize` for both query and document weights, you could run the following query :
+
+```bash
+PATH_INDEX=/my/custom/index/path WEIGHT_QUERY=tf_idf_log_normalize WEIGHT_DOCUMENT=tf_idf_log_normalize python src/interface.py --model vectorial "cats are cute"
+```
+
+Use the same *stemmer/lemmatizer* for the query that the one used for the index. You can control the use of the POS lemmatizer or the Snowball Stemmer with the `POS` env variable (True by default).
+
 ## Testing
 
-Run `make test`.
+Simply run `make test`.
+
+These tests helped during development to avoid breaking changes, and validate Pull Request with Github Action (CI/CD).

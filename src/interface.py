@@ -4,7 +4,7 @@ import pickle as pkl
 import bool_query as bq
 import vectorial_query as vq
 import argparse
-from preprocess import InvertedIndex, StatCollection
+from preprocess import InvertedIndex, StatCollection, load_index
 
 from config import PATH_INDEX, POS
 
@@ -40,8 +40,7 @@ if __name__ == "__main__" :
     parser.add_argument("query", help="query to process")
     parser.add_argument("--number", "-n", help="number of results to display", type=int, default=10)
     args = parser.parse_args()
-    with open(PATH_INDEX, "rb") as f:
-        inverted_index = pkl.load(f)
+    inverted_index = load_index(PATH_INDEX)
     if args.model == "boolean":
         print("\n".join(retrieve_docs_from_bool_query(args.query, inverted_index, args.number, pos=POS)))
     elif args.model == "vectorial":

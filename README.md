@@ -46,27 +46,34 @@ To use and execute queries, you can use the cli provided by `[src/interface.py](
 
 ```bash
 > python src/interface.py --help
-usage: interface.py [-h] [--model MODEL] [--number NUMBER] query
+usage: interface.py [-h] [--model MODEL] [--number NUMBER] [--weight-document WEIGHT_DOCUMENT] [--weight-query WEIGHT_QUERY] [--pos POS] [--path-index PATH_INDEX] query
 
 positional arguments:
   query                 query to process
 
 optional arguments:
   -h, --help            show this help message and exit
-  --model MODEL         <boolean|vectorial> model used to process query (default="boolean")
+  --model MODEL         <boolean|vectorial> model used to process query
   --number NUMBER, -n NUMBER
-                        number of results to display (default=10)
+                        number of results to display (only for vectorial)
+  --weight-document WEIGHT_DOCUMENT
+                        <frequency|tf_idf_normalize|tf_idf_logarithmic|tf_idf_log_normalize> weighting scheme for the document (defaults to tf_idf_log_normalize
+  --weight-query WEIGHT_QUERY
+                        <tf|tf_idf> weighting scheme for the query (defaults to tf_idf)
+  --pos POS             <True|False> wether to use pos lemmatization or not
+  --path-index PATH_INDEX
+                        specify this path to use a custom index
 ```
 
-The path to the index or the stats used for vectorial query are configured through *Environnement variable*, which can also be modified in `[src/config.py](src/config.py)`.
+all arguments can be ommitted appart from the query string, however you might want to experiment with the type of model used by setting the `--model` parameter to boolean or vectorial. the other parameters allow further experimentation of the query parameters which are detailed in the vectorial querying section of this readme.
 
-For example, if you want to use a custom index, for a vectorial query with a `tf_idf_log_normalize` for both query and document weights, you could run the following query :
+For example, if you want to use a custom index, for a vectorial query with a `tf_idf` weighting scheme for both query and document weights, you could run the following query :
 
 ```bash
-PATH_INDEX=/my/custom/index/path WEIGHT_QUERY=tf_idf_log_normalize WEIGHT_DOCUMENT=tf_idf_log_normalize python src/interface.py --model vectorial "cats are cute"
+python src/interface.py --model vectorial --path-index /my/custom/index/path --weight-query tf_idf --weight-document tf_idf "cats are cute"
 ```
 
-Use the same *stemmer/lemmatizer* for the query that the one used for the index. You can control the use of the POS lemmatizer or the Snowball Stemmer with the `POS` env variable (True by default).
+Use the same *stemmer/lemmatizer* for the query that the one used for the index. You can control the use of the POS lemmatizer or the Snowball Stemmer with the `--pos` parameter (True by default).
 
 ## Testing
 

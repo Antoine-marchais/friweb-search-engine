@@ -410,7 +410,7 @@ def save_index(index_path: str, index: InvertedIndex):
 if __name__ == "__main__" :
     parser = argparse.ArgumentParser()
     parser.add_argument("index_type", type=int, help="type of the index to build")
-    parser.add_argument("--pos", type=bool, default=True, help="use the the Part-Of-Speech (pos) lemmatization, or simple stemmer (default=True)")
+    parser.add_argument("--pos", type=bool, default=POS, help="use the the Part-Of-Speech (pos) lemmatization, or simple stemmer (default=True)")
     parser.add_argument("output", type=str, default=PATH_INDEX, help="path where the index will be saved")
     args = parser.parse_args()
 

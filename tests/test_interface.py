@@ -21,24 +21,24 @@ TEST_INVERTED_INDEX_TYPE1 = InvertedIndex(
 )
 
 def test_bool_query_no_operator():
-    assert retrieve_docs_from_bool_query("cats dog squid", TEST_INVERTED_INDEX_TYPE1) == ["Everything about animals", "Every animal but birds"]
-    assert retrieve_docs_from_bool_query("cats lemu", TEST_INVERTED_INDEX_TYPE1) == []
+    assert retrieve_docs_from_bool_query("cats dog squid", TEST_INVERTED_INDEX_TYPE1, True) == ["Everything about animals", "Every animal but birds"]
+    assert retrieve_docs_from_bool_query("cats lemu", TEST_INVERTED_INDEX_TYPE1, True) == []
 
 def test_bool_query_with_operator():
 
     # priorities : NAND > AND > OR
 
     # this is like (cat or (dog nand duck))
-    assert retrieve_docs_from_bool_query("cats or dogs nand duck", TEST_INVERTED_INDEX_TYPE1) == ["Everything about animals", "Why cats love seafood", "Every animal but birds"]
+    assert retrieve_docs_from_bool_query("cats or dogs nand duck", TEST_INVERTED_INDEX_TYPE1, True) == ["Everything about animals", "Why cats love seafood", "Every animal but birds"]
    
     # this is like (squid nand(cat and dog))
-    assert retrieve_docs_from_bool_query("squid nand cat and dog", TEST_INVERTED_INDEX_TYPE1) == ["Why cats love seafood", "Vingt mille lieues sous les mers"]
+    assert retrieve_docs_from_bool_query("squid nand cat and dog", TEST_INVERTED_INDEX_TYPE1, True) == ["Why cats love seafood", "Vingt mille lieues sous les mers"]
     
     # this is like ((lemu and cat) or dog))
-    assert retrieve_docs_from_bool_query("lemu and cat or dog", TEST_INVERTED_INDEX_TYPE1) == ["Everything about animals", "Every animal but birds","How to hunt with a dog"]
+    assert retrieve_docs_from_bool_query("lemu and cat or dog", TEST_INVERTED_INDEX_TYPE1, True) == ["Everything about animals", "Every animal but birds","How to hunt with a dog"]
     
     # this is like (lemu and (cat or dog))
-    assert retrieve_docs_from_bool_query("lemu and ( cat or dog )", TEST_INVERTED_INDEX_TYPE1) == []
+    assert retrieve_docs_from_bool_query("lemu and ( cat or dog )", TEST_INVERTED_INDEX_TYPE1, True) == []
 
     #  squid and ( cat or dog )
-    assert retrieve_docs_from_bool_query("squid and ( cat or dog )", TEST_INVERTED_INDEX_TYPE1) == ["Everything about animals", "Why cats love seafood", "Every animal but birds"]
+    assert retrieve_docs_from_bool_query("squid and ( cat or dog )", TEST_INVERTED_INDEX_TYPE1, True) == ["Everything about animals", "Why cats love seafood", "Every animal but birds"]

@@ -7,9 +7,9 @@ cwd = os.getcwd()
 PATH_DATA = os.path.join(cwd,"data","collection")
 PATH_DATA_BIN = os.path.join(cwd,"data","corpus.pkl")
 PATH_STOP_WORDS = os.path.join(cwd, "data", "stop_words.txt")
-PATH_INDEX = os.getenv("PATH_INDEX", default=os.path.join(cwd, "data", "index_type2_pos.pkl") if not DEV_MODE else os.path.join(cwd, "data", "dev_index.pkl"))
+PATH_INDEX = os.path.join(cwd, "data", "index_type2_pos.pkl") if not DEV_MODE else os.path.join(cwd, "data", "dev_index.pkl")
 
-POS = bool(os.getenv("POS", True))
+POS = True
 
-WEIGHT_QUERY = os.getenv("WEIGHT_QUERY", default="tf_idf")
-WEIGHT_DOCUMENT = os.getenv("WEIGHT_DOCUMENT", default="tf_idf_logarithmic_normalize")
+WEIGHT_QUERY = "tf_idf"
+WEIGHT_DOCUMENT = "tf_idf_logarithmic_normalize"

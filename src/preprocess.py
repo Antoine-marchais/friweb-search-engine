@@ -16,7 +16,7 @@ from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
 from nltk.stem import SnowballStemmer
 
-@timer
+# @timer
 def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int]=None) -> OrdDict[str, str]:
     """Read file and import tokens into a new collection
     
@@ -43,7 +43,7 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
                 corpus[os.path.join(n_dir,filename)] = f.read()
     return corpus
 
-@timer
+# @timer
 def load_corpus_from_binary(path: str) -> OrdDict[str, str]:
     """Load corpus from binary file
     
@@ -69,7 +69,7 @@ def tokenize_document(document: str) -> List[str]:
     tokens = word_tokenize(document.lower())
     return [tok.lower() for tok in tokens]
 
-@timer
+# @timer
 def tokenize_collection(collection: OrdDict[str, str]) -> OrdDict[str, List[str]]:
     """tokenize a collection
     
@@ -145,7 +145,7 @@ def remove_stop_words_from_document(d: List[str], stop_words: List[str], excepti
     
     return [word for word in d if (word in exceptions) or (word not in stop_words)]
 
-@timer
+# @timer
 def remove_stop_words_collection(collection: OrdDict[str, List[str]], stop_word_path: str) -> OrdDict[str, List[str]]:
     """remove all stop words from corpus given a stop words file
     
@@ -163,7 +163,7 @@ def remove_stop_words_collection(collection: OrdDict[str, List[str]], stop_word_
         new_corpus[key] = remove_stop_words_from_document(collection[key], stp, [])
     end_coll_size = get_collection_size(new_corpus)
 
-    print(f"removing stop word : from {init_coll_size} tokens to {end_coll_size} : {end_coll_size/init_coll_size : .2%}")
+    # print(f"removing stop word : from {init_coll_size} tokens to {end_coll_size} : {end_coll_size/init_coll_size : .2%}")
 
     return new_corpus
 
@@ -193,7 +193,7 @@ def lemmatize_document(document: List[str], pos: bool = True) -> List[str]:
         stemmer = SnowballStemmer("english")
         return [stemmer.stem(token) for token in document]
 
-@timer
+# @timer
 def lemmatize_collection(segmented_collection: OrdDict[str, List[str]], pos: bool = True) -> OrdDict[str, List[str]]:
     """Lemmatize all articles in corpus using pos tags
     
@@ -256,7 +256,7 @@ def get_stats_document(document: List[str]) -> OrdDict[str, float]:
     
     return stats
 
-@timer
+# @timer
 def get_stats_collection(processed_collection: OrdDict[int, List[str]]) -> StatCollection:
     """Computes usefull stats for the collection
     
@@ -293,7 +293,7 @@ class InvertedIndex:
     stats: StatCollection
 
 # TODO: @Antoine-marchais : This part could be refactored with auxiliary function for lisibility.
-@timer
+# @timer
 def build_inverted_index(
     collection: OrdDict[str, str],
     stop_words_path: str,
@@ -396,12 +396,12 @@ def get_wordnet_pos(treebank_tag: str) -> str:
     else:
         return wordnet.NOUN
 
-@timer
+# @timer
 def load_index(index_path:str) -> InvertedIndex:
     with open(index_path, "rb") as f:
         return pkl.load(f)
 
-@timer
+# @timer
 def save_index(index_path: str, index: InvertedIndex):
     with open(index_path,"wb") as f:
         pkl.dump(index,f)

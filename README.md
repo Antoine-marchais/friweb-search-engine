@@ -40,7 +40,39 @@ We specifically relie on two modules for this project :
 
 ## Usage
 
-TODO, with interface.py
+### Practical querying
+
+To use and execute queries, you can use the cli provided by `[src/interface.py](src/interface.py)`.
+
+```bash
+> python src/interface.py --help
+usage: interface.py [-h] [--model MODEL] [--number NUMBER] query
+
+positional arguments:
+  query                 query to process
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --model MODEL         <boolean|vectorial> model used to process query (default="boolean")
+  --number NUMBER, -n NUMBER
+                        number of results to display (default=10)
+```
+
+The path to the index or the stats used for vectorial query are configured through *Environnement variable*, which can also be modified in `[src/config.py](src/config.py)`.
+
+For example, if you want to use a custom index, for a vectorial query with a `tf_idf_log_normalize` for both query and document weights, you could run the following query :
+
+```bash
+PATH_INDEX=/my/custom/index/path WEIGHT_QUERY=tf_idf_log_normalize WEIGHT_DOCUMENT=tf_idf_log_normalize python src/interface.py --model vectorial "cats are cute"
+```
+
+Use the same *stemmer/lemmatizer* for the query that the one used for the index. You can control the use of the POS lemmatizer or the Snowball Stemmer with the `POS` env variable (True by default).
+
+## Testing
+
+Simply run `make test`.
+
+These tests helped during development to avoid breaking changes, and validate Pull Request with Github Action (CI/CD).
 
 ## Preprocessing
 
@@ -222,7 +254,7 @@ Using the previous results, we can see that 84% of the vocabulary occur less tha
 
 ## Index Construction
 
-Now that's the pre-processing is optimized, how can we improve the index construction.
+Now that's the pre-processing is optimized, how can we improve the index construction ?
 
 ### It's Easier to Ask for Forgiveness than Permission
 
@@ -361,36 +393,3 @@ Here we're making a dot product between a vector representing the query and the 
 
 **TODO**: add a few more lines
 
-### Practical querying
-
-To use and execute queries, you can use the cli provided by `[src/interface.py](src/interface.py)`.
-
-```bash
-> python src/interface.py --help
-usage: interface.py [-h] [--model MODEL] [--number NUMBER] query
-
-positional arguments:
-  query                 query to process
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --model MODEL         <boolean|vectorial> model used to process query (default="boolean")
-  --number NUMBER, -n NUMBER
-                        number of results to display (default=10)
-```
-
-The path to the index or the stats used for vectorial query are configured through *Environnement variable*, which can also be modified in `[src/config.py](src/config.py)`.
-
-For example, if you want to use a custom index, for a vectorial query with a `tf_idf_log_normalize` for both query and document weights, you could run the following query :
-
-```bash
-PATH_INDEX=/my/custom/index/path WEIGHT_QUERY=tf_idf_log_normalize WEIGHT_DOCUMENT=tf_idf_log_normalize python src/interface.py --model vectorial "cats are cute"
-```
-
-Use the same *stemmer/lemmatizer* for the query that the one used for the index. You can control the use of the POS lemmatizer or the Snowball Stemmer with the `POS` env variable (True by default).
-
-## Testing
-
-Simply run `make test`.
-
-These tests helped during development to avoid breaking changes, and validate Pull Request with Github Action (CI/CD).

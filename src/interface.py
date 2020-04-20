@@ -8,7 +8,7 @@ from preprocess import InvertedIndex, StatCollection, load_index
 
 from config import PATH_INDEX, POS
 
-def retrieve_docs_from_bool_query(query: str, inverted_index: InvertedIndex, n_results: int = 100, pos: bool = True) -> List[str]:
+def retrieve_docs_from_bool_query(query: str, inverted_index: InvertedIndex, pos: bool = True) -> List[str]:
     lemmatized_query = bq.lemmatize_query(query, pos=pos)
 
     # if no logical operator in the query, we assumes it's a "and"
@@ -24,7 +24,7 @@ def retrieve_docs_from_bool_query(query: str, inverted_index: InvertedIndex, n_r
     postfix_query = bq.query_to_postfix(lemmatized_query)
     relevant_documents_id = bq.process_postfix_query(postfix_query, inverted_index.index)
 
-    return [inverted_index.mapping[doc_id] for doc_id in relevant_documents_id][:n_results]
+    return [inverted_index.mapping[doc_id] for doc_id in relevant_documents_id]
 
 def retrieve_docs_from_vectorial_query(query: str, inverted_index: InvertedIndex, n_results: int, pos: bool = True) -> List[str]:
     lemmatized_query = vq.lemmatize_query(query, pos=pos)
@@ -38,11 +38,11 @@ if __name__ == "__main__" :
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", help="<boolean|vectorial> model used to process query", default="boolean")
     parser.add_argument("query", help="query to process")
-    parser.add_argument("--number", "-n", help="number of results to display", type=int, default=10)
+    parser.add_argument("--number", "-n", help="number of results to display (only for vectorial)", type=int, default=10)
     args = parser.parse_args()
     inverted_index = load_index(PATH_INDEX)
     if args.model == "boolean":
-        print("\n".join(retrieve_docs_from_bool_query(args.query, inverted_index, args.number, pos=POS)))
+        print("\n".join(retrieve_docs_from_bool_query(args.query, inverted_index, pos=POS)))
     elif args.model == "vectorial":
         print("\n".join(retrieve_docs_from_vectorial_query(args.query, inverted_index, args.number, pos=POS)))
 

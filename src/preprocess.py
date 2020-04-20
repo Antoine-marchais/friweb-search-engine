@@ -332,11 +332,11 @@ def build_inverted_index(
                         _ = index[term][doc_id]
                         # if pass, do nothing
                     except KeyError:
-                        index[term][doc_id]=1
+                        index[term][doc_id]=True
 
                 except KeyError:
                     index[term]=OrderedDict()
-                    index[term][doc_id]=1
+                    index[term][doc_id]=True
 
             
             mapping[doc_id] = document

@@ -42,8 +42,14 @@ def get_scores(
             weight_query = 1
             
         #fall back to term frequency for the query
-        else : 
+        elif weighting_scheme_query == "tf" : 
             weight_query = words[term]
+
+        #fall back to tf-idf for the query
+        else : 
+            tf_query = words[term]
+            idf_query = get_idf(term, frequency_index, stats_collection.nb_docs)
+            weight_query = tf_query*idf_query
         query_norm += weight_query**2
         if term in frequency_index :
             for doc_ID, frequency in frequency_index[term].items():

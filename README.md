@@ -389,7 +389,20 @@ If you don't specify any logical operator, we assume it's an **AND** request : `
 
 ### Vectorial querying
 
-Here we're making a dot product between a vector representing the query and the vector representing the dataset.
+In this case each document and query is represented by a vector in the vocabulary space. To find out how close a document is close to a query we compute the cosine similarity between the two vectors. However there are different ways to represent documents in the vocabulary space, which can affect te end results of our search engine.
 
-**TODO**: add a few more lines
+#### Weighting schemes
+
+Several weights that can be used to score our documents : 
+- term frequency: the number of occurences of a term in a document
+- number of unique terms in the document
+- mean frequency of occurence of a term in the document
+- inverse document frequency: number of documents in which a term occurs
+
+We chose to combine this weights using the normalized logarithmic tf-idf weighting scheme for the documents, which ensures that relevant distinctive words are given a better weight for the document (tf-idf part), while making sure iregular documents with repetitions of specific terms will not get irresonably high scores (logarithmic normalized part). For the query we dropped the normalization, as user queries usually contain a few well selected words and do not need to be normalized.
+
+#### Dot product optimization
+
+Although the cosine similarity consists basically in a dot product between query vector and document vector, the high dimensionality of the vocabulary space can make it quite slow if all weights are computed for every terms in every document even if the user query contains only a handfull of terms. In a search engine, this operation needs to be performed on a very large number of documents, which is why we optimize our dot product by computing and adding only the terms present in the query. In a query of 10 words over our 237 000 distinct terms in the vocabulary, this results in a 23 700-fold factor which shows that a naive dot product simply won't do.
+
 

@@ -1,11 +1,13 @@
 import os
 import pickle as pkl
+import argparse
 
 from collections import OrderedDict, Counter
 from tqdm import tqdm
 from dataclasses import dataclass
-from typing import Optional, List, Union, Tuple, Any, OrderedDict as OrdDict
+from typing import Optional, List, Union, Tuple, Any, Dict, OrderedDict as OrdDict
 
+from utils import timer
 from config import PATH_DATA, DEV_MODE, DEV_ITER, PATH_INDEX, PATH_STOP_WORDS, PATH_DATA_BIN, POS
 from nltk import pos_tag
 from nltk.stem.api import StemmerI
@@ -14,7 +16,7 @@ from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
 from nltk.stem import SnowballStemmer
 
-
+# @timer
 def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int]=None) -> OrdDict[str, str]:
     """Read file and import tokens into a new collection
     
@@ -41,6 +43,7 @@ def create_corpus_from_files(path: str, dev: bool =False, dev_iter: Optional[int
                 corpus[os.path.join(n_dir,filename)] = f.read()
     return corpus
 
+# @timer
 def load_corpus_from_binary(path: str) -> OrdDict[str, str]:
     """Load corpus from binary file
     
@@ -66,6 +69,7 @@ def tokenize_document(document: str) -> List[str]:
     tokens = word_tokenize(document.lower())
     return [tok.lower() for tok in tokens]
 
+# @timer
 def tokenize_collection(collection: OrdDict[str, str]) -> OrdDict[str, List[str]]:
     """tokenize a collection
     
@@ -75,7 +79,7 @@ def tokenize_collection(collection: OrdDict[str, str]) -> OrdDict[str, List[str]
     Returns:
         OrdDict[str, List[str]] -- tokenized collection
     """
-    new_collection = OrderedDict()    
+    new_collection = OrderedDict()
     for key in tqdm(collection, desc="tokenizing collection : "):
         new_collection[key] = tokenize_document(collection[key])
 
@@ -141,6 +145,7 @@ def remove_stop_words_from_document(d: List[str], stop_words: List[str], excepti
     
     return [word for word in d if (word in exceptions) or (word not in stop_words)]
 
+# @timer
 def remove_stop_words_collection(collection: OrdDict[str, List[str]], stop_word_path: str) -> OrdDict[str, List[str]]:
     """remove all stop words from corpus given a stop words file
     
@@ -152,10 +157,19 @@ def remove_stop_words_collection(collection: OrdDict[str, List[str]], stop_word_
         {OrdDict[str, List[str]]} -- updated corpus
     """
     stp = load_stop_words(stop_word_path)
+    init_coll_size = get_collection_size(collection)
     new_corpus = OrderedDict()
     for key in tqdm(collection, desc="removing stop words"):
         new_corpus[key] = remove_stop_words_from_document(collection[key], stp, [])
-    return new_corpus 
+    end_coll_size = get_collection_size(new_corpus)
+
+    # print(f"removing stop word : from {init_coll_size} tokens to {end_coll_size} : {end_coll_size/init_coll_size : .2%}")
+
+    return new_corpus
+
+def get_collection_size(collection: OrdDict[str, List[str]]) -> int:
+    return sum([len(tokens) for tokens in collection.values()])
+
 
 def lemmatize_document(document: List[str], pos: bool = True) -> List[str]:
     """
@@ -179,6 +193,7 @@ def lemmatize_document(document: List[str], pos: bool = True) -> List[str]:
         stemmer = SnowballStemmer("english")
         return [stemmer.stem(token) for token in document]
 
+# @timer
 def lemmatize_collection(segmented_collection: OrdDict[str, List[str]], pos: bool = True) -> OrdDict[str, List[str]]:
     """Lemmatize all articles in corpus using pos tags
     
@@ -229,11 +244,19 @@ def get_stats_document(document: List[str]) -> OrdDict[str, float]:
     """
     stats=OrderedDict()
     frequencies = Counter(document)
-    stats["freq_max"] = max(frequencies.values())
-    stats["moy_freq"] = sum(frequencies.values())/len(frequencies)
-    stats["unique"] = len(frequencies.values())
+    if len(frequencies.values()) > 0:
+        stats["freq_max"] = max(frequencies.values())
+        stats["moy_freq"] = sum(frequencies.values())/len(frequencies)
+        stats["unique"] = len(frequencies.values())
+    else:
+        stats["freq_max"] = 0
+        stats["moy_freq"] = 0
+        stats["unique"] = 0
+    
+    
     return stats
 
+# @timer
 def get_stats_collection(processed_collection: OrdDict[int, List[str]]) -> StatCollection:
     """Computes usefull stats for the collection
     
@@ -262,7 +285,7 @@ class InvertedIndex:
     """
     itype: int
     index: Union[
-        OrdDict[str, List[int]], # itype == 1
+        OrdDict[str, OrdDict[int, bool]], # itype == 1
         OrdDict[str, OrdDict[int, int]], # itype == 2
         OrdDict[str, OrdDict[int, List[int]]] # itype == 3
         ]
@@ -270,6 +293,7 @@ class InvertedIndex:
     stats: StatCollection
 
 # TODO: @Antoine-marchais : This part could be refactored with auxiliary function for lisibility.
+# @timer
 def build_inverted_index(
     collection: OrdDict[str, str],
     stop_words_path: str,
@@ -295,32 +319,41 @@ def build_inverted_index(
     collection = remove_stop_words_collection(collection, stop_words_path)
     mapping = OrderedDict()
     index = OrderedDict()
+    # docs_stats = OrderedDict()
 
     doc_id = 0
     if type_index == 1:
         for document in tqdm(collection, desc="building index : "):
 
             for term in collection[document]:
-                if term in index.keys():
-                    if doc_id not in index[term]:
-                        index[term].append(doc_id)
-                else:
-                    index[term]=[doc_id]
 
+                try:
+                    try:
+                        _ = index[term][doc_id]
+                        # if pass, do nothing
+                    except KeyError:
+                        index[term][doc_id]=True
+
+                except KeyError:
+                    index[term]=OrderedDict()
+                    index[term][doc_id]=True
+
+            
             mapping[doc_id] = document
             doc_id += 1
 
     elif type_index ==2:
         for document in tqdm(collection, desc="building index : "):
             for term in collection[document]:
-                if term in index.keys():
-                    if doc_id in index[term].keys():
-                        index[term][doc_id] = index[term][doc_id] + 1
-                    else:
+                try:
+                    try:
+                        index[term][doc_id] += 1
+                    except KeyError:
                         index[term][doc_id]= 1
-                else:
+                except KeyError:
                     index[term]=OrderedDict()
                     index[term][doc_id]=1
+
 
             mapping[doc_id] = document
             doc_id += 1
@@ -329,14 +362,15 @@ def build_inverted_index(
         for document in tqdm(collection, desc="building index : "):
             pos=0
             for term in collection[document]:
-                if term in index.keys():
-                    if doc_id in index[term].keys():
+                try:
+                    try:
                         index[term][doc_id].append(pos)
-                    else:
+                    except KeyError:
                         index[term][doc_id]= [pos]
-                else:
+                except KeyError:
                     index[term]=OrderedDict()
                     index[term][doc_id]=[pos]
+
                 pos += 1
             
             mapping[doc_id] = document
@@ -362,10 +396,29 @@ def get_wordnet_pos(treebank_tag: str) -> str:
     else:
         return wordnet.NOUN
 
+# @timer
+def load_index(index_path:str) -> InvertedIndex:
+    with open(index_path, "rb") as f:
+        return pkl.load(f)
+
+# @timer
+def save_index(index_path: str, index: InvertedIndex):
+    with open(index_path,"wb") as f:
+        pkl.dump(index,f)
+
 
 if __name__ == "__main__" :
-    print("reading files")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("index_type", type=int, help="type of the index to build")
+    parser.add_argument("--pos", type=bool, default=POS, help="use the the Part-Of-Speech (pos) lemmatization, or simple stemmer (default=True)")
+    parser.add_argument("output", type=str, default=PATH_INDEX, help="path where the index will be saved")
+    args = parser.parse_args()
+
+    valid_index_types =  (1, 2, 3)
+    assert args.index_type in valid_index_types, Exception(f"invalid index type {args.index_type}, not in {valid_index_types}")
+    print("reading corpus")
     if os.path.exists(PATH_DATA_BIN) and not DEV_MODE:
+        print("loading from binary")
         corpus = load_corpus_from_binary(PATH_DATA_BIN)
     else:
         corpus = create_corpus_from_files(PATH_DATA, dev=DEV_MODE, dev_iter=DEV_ITER)
@@ -374,7 +427,7 @@ if __name__ == "__main__" :
             with open(PATH_DATA_BIN,"wb") as f:
                 pkl.dump(corpus, f)
     
-    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=2, pos=POS)
-    print("saving index")
-    with open(PATH_INDEX,"wb") as f:
-        pkl.dump(index,f)
+    print(f"build inverted index of type {args.index_type} {'with Part-Of-Speech lemmatization' if args.pos else 'with Snowball stemmer'}")
+    index = build_inverted_index(corpus, PATH_STOP_WORDS, type_index=args.index_type, pos=args.pos)
+    print(f"saving index with pickle at {args.output}")
+    save_index(args.output, index)

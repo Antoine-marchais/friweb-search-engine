@@ -7,7 +7,6 @@ from mock_data import COLLECTION, get_index
 import pickle
 import pytest
 
-@pytest.mark.xfail(reason="data is not imported in the repo +  pickle doesn't load properly the data")
 @pytest.mark.parametrize(
     "index_type",
     [1, 2],

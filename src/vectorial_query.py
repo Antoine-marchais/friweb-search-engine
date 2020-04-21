@@ -14,19 +14,17 @@ def lemmatize_query(query: str, pos:bool = True) -> List[str]:
 def get_scores(
     query: List[str], 
     inverted_index: InvertedIndex, 
-    weighting_scheme_document=WEIGHT_DOCUMENT, 
-    weighting_scheme_query=WEIGHT_QUERY) -> Dict[int,float]:
+    wq: str,
+    wd: str) -> Dict[int,float]:
     """
     compute score for all documents using the vectorial model with the config parameters
     
     Arguments:
         query {List[str]} -- preprocessed query 
         inverted_index {InvertedIndex} -- inverted index constructed on the collection
-    
-    Keyword Arguments:
-        weighting_scheme_document {str} -- weighting scheme for the document (default: {WEIGHT_DOCUMENT})
-        weighting_scheme_query {str} -- weighting scheme for the query (default: {WEIGHT_QUERY})
-    
+        wq {str} -- weighting scheme for the query (default: {WEIGHT_QUERY})
+        wd {str} -- weighting scheme for the document (default: {WEIGHT_DOCUMENT})
+        
     Returns:
         Dict[int,float] -- similarity between the query and each document
     """
@@ -35,27 +33,33 @@ def get_scores(
     query_norm = 0
     words = Counter(query)
     stats_collection = inverted_index.stats
-    assert inverted_index.itype == 2
+    assert inverted_index.itype == 2, f"need a frequency index (type 2) for a vectorial query, got index of type {inverted_index.itype}"
     frequency_index = inverted_index.index
     for term in words:
-        if weighting_scheme_query == "binary":
+        if wq == "binary":
             weight_query = 1
             
         #fall back to term frequency for the query
-        else : 
+        elif wq == "tf" : 
             weight_query = words[term]
+
+        #fall back to tf-idf for the query
+        else : 
+            tf_query = words[term]
+            idf_query = get_idf(term, frequency_index, stats_collection.nb_docs)
+            weight_query = tf_query*idf_query
         query_norm += weight_query**2
         if term in frequency_index :
             for doc_ID, frequency in frequency_index[term].items():
-                if weighting_scheme_document == "binary":
+                if wd == "binary":
                     weight_document = 1
-                elif weighting_scheme_document == "frequency":
+                elif wd == "frequency":
                     weight_document = get_tf(term, doc_ID, frequency_index)
-                elif weighting_scheme_document == "tf_idf_normalize":
+                elif wd == "tf_idf_normalize":
                     tf_document = get_tf_normalize(term, doc_ID, frequency_index, stats_collection)
                     idf_document = get_idf(term, frequency_index, stats_collection.nb_docs)
                     weight_document = tf_document*idf_document
-                elif weighting_scheme_document == "tf_idf_logarithmic":
+                elif wd == "tf_idf_logarithmic":
                     tf_document = get_tf_logarithmique(term, doc_ID, frequency_index)
                     idf_document = get_idf(term, frequency_index, stats_collection.nb_docs)
                     weight_document = tf_document*idf_document

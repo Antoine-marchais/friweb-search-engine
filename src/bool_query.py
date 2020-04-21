@@ -194,7 +194,7 @@ def process_postfix_query(postfix_query: List[str], inverted_index: OrdDict[str,
             relevant_docs_stack.append(boolean_operator_merge(term, op_1, op_2))
         else:
             if term in inverted_index:
-                relevant_docs_stack.append(inverted_index[term])
+                relevant_docs_stack.append(list(inverted_index[term].keys()))
             else: 
                 relevant_docs_stack.append([])
 

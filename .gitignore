@@ -1,6 +1,9 @@
 data/*
 !data/stop_words.txt
 !data/stop_words_extended.txt
+!data/index_type1_stem.pkl
+!data/index_type2_stem.pkl
+!data/index_type2_pos.pkl
 .vscode/*
 
 # Byte-compiled / optimized / DLL files
